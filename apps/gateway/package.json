@@ -1,0 +1,34 @@
+{
+  "name": "@datatorag-mcp/gateway",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build && tsup",
+    "dev": "tsx server.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@datatorag-mcp/auth": "workspace:*",
+    "@datatorag-mcp/config": "workspace:*",
+    "@datatorag-mcp/db": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "drizzle-orm": "^0.39.0",
+    "express": "^5.1.0",
+    "next": "16.2.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

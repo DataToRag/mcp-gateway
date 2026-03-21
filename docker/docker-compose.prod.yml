@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: datatoragmcp
+      POSTGRES_USER: datatoragmcp
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U datatoragmcp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - dtrmcp
+    restart: unless-stopped
+
+  db-init:
+    build:
+      context: ..
+      dockerfile: packages/db/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://datatoragmcp:${POSTGRES_PASSWORD}@postgres:5432/datatoragmcp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dtrmcp
+    restart: "no"
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: apps/gateway/Dockerfile
+    ports:
+      - "8285:8285"
+    environment:
+      DATABASE_URL: postgresql://datatoragmcp:${POSTGRES_PASSWORD}@postgres:5432/datatoragmcp
+      GATEWAY_PORT: "8285"
+      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-http://localhost:8285}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8285/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+    networks:
+      - dtrmcp
+    restart: unless-stopped
+
+  dtrmcp-server-math-tools:
+    build:
+      context: ../samples/math-tools
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - dtrmcp
+    restart: unless-stopped
+    # Gateway reaches it as http://dtrmcp-server-math-tools:3000/mcp
+
+networks:
+  dtrmcp:
+    name: datatorag-mcp-network
+    driver: bridge
+
+volumes:
+  postgres-data:

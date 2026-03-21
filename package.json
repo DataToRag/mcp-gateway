@@ -1,0 +1,23 @@
+{
+  "name": "datatorag-mcp",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:infra": "docker compose -f docker/docker-compose.dev.yml up postgres db-init dtrmcp-server-math-tools -d",
+    "dev:gateway": "pnpm run dev:infra && turbo run dev --filter=@datatorag-mcp/gateway",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:push": "turbo run db:push",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "turbo run db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}
