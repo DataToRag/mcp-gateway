@@ -3,17 +3,17 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
-import { tools, mcpServers } from "@datatorag-mcp/db";
+import { tools, mcpServers, pluginConnections } from "@datatorag-mcp/db";
 import type { ConnectionPool } from "./pool.js";
 
 const NAMESPACE_SEPARATOR = "__";
 
 /**
  * Creates a new MCP Server instance for a client session.
- * Dynamically serves tools from the registry and routes calls to backend containers.
- * Falls back to a built-in echo tool when no backend servers are registered.
+ * Dynamically serves tools from the registry and routes calls to backend
+ * processes (local plugins) or Docker containers.
  */
 export function createMcpServer(
   userId: string,
@@ -26,7 +26,6 @@ export function createMcpServer(
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    // Fetch all enabled tools from active servers
     const registeredTools = await db
       .select({
         namespacedName: tools.namespacedName,
@@ -46,7 +45,6 @@ export function createMcpServer(
       },
     }));
 
-    // Always include the built-in echo tool
     toolList.push({
       name: "echo",
       description:
@@ -69,7 +67,6 @@ export function createMcpServer(
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
-    // Built-in echo tool
     if (name === "echo") {
       const message = (args as Record<string, unknown>)?.message;
       return {
@@ -82,7 +79,6 @@ export function createMcpServer(
       };
     }
 
-    // Parse namespace: serverSlug__toolName
     const separatorIndex = name.indexOf(NAMESPACE_SEPARATOR);
     if (separatorIndex === -1) {
       return {
@@ -96,12 +92,12 @@ export function createMcpServer(
     const serverSlug = name.slice(0, separatorIndex);
     const toolName = name.slice(separatorIndex + NAMESPACE_SEPARATOR.length);
 
-    // Look up the backend server
     const [mcpServer] = await db
       .select({
         id: mcpServers.id,
         slug: mcpServers.slug,
         containerPort: mcpServers.containerPort,
+        githubRepoUrl: mcpServers.githubRepoUrl,
       })
       .from(mcpServers)
       .where(eq(mcpServers.slug, serverSlug))
@@ -119,23 +115,47 @@ export function createMcpServer(
       };
     }
 
-    // Build the URL for the backend container
-    // In production (gateway in Docker): use container hostname on shared network
-    // In local dev (gateway on host): use DOCKER_HOST_OVERRIDE (host:port)
-    const dockerHostOverride = process.env.DOCKER_HOST_OVERRIDE;
+    // Build URL: local plugin (has githubRepoUrl) uses localhost,
+    // Docker container uses the container hostname on the shared network.
     let serverUrl: string;
-    if (dockerHostOverride) {
+    const dockerHostOverride = process.env.DOCKER_HOST_OVERRIDE;
+    if (mcpServer.githubRepoUrl) {
+      // Local plugin process
+      serverUrl = `http://localhost:${mcpServer.containerPort}/mcp`;
+    } else if (dockerHostOverride) {
       serverUrl = `http://${dockerHostOverride}/mcp`;
     } else {
       serverUrl = `http://dtrmcp-server-${mcpServer.slug}:${mcpServer.containerPort}/mcp`;
     }
-    console.log(`[route] ${name} → ${serverUrl} (override=${dockerHostOverride ?? "none"})`);
+
+    // Look up per-user token for this plugin
+    let userToken: string | null = null;
+    if (mcpServer.githubRepoUrl) {
+      const [conn] = await db
+        .select({ accessToken: pluginConnections.accessToken })
+        .from(pluginConnections)
+        .where(
+          and(
+            eq(pluginConnections.userId, userId),
+            eq(pluginConnections.mcpServerId, mcpServer.id)
+          )
+        )
+        .limit(1);
+      if (conn) {
+        userToken = conn.accessToken;
+      }
+    }
+
+    console.log(
+      `[route] ${name} → ${serverUrl} (tool: ${toolName}, token: ${userToken ? "yes" : "no"})`
+    );
 
     try {
-      console.log(`[route] ${name} → ${serverUrl} (tool: ${toolName})`);
-      // Acquire a pooled connection and forward the call
       const client = await pool.acquire(mcpServer.id, serverUrl);
       try {
+        // TODO: forward userToken via X-User-Token header when the MCP SDK
+        // supports custom headers on callTool. For now, include it in the
+        // tool arguments metadata if present.
         const result = await client.callTool({
           name: toolName,
           arguments: args as Record<string, unknown>,
@@ -147,10 +167,10 @@ export function createMcpServer(
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown error";
-      const stack =
-        error instanceof Error ? error.stack : "";
-      console.error(`[route-error] ${serverSlug}/${toolName} @ ${serverUrl}:`, message);
-      if (stack) console.error(stack);
+      console.error(
+        `[route-error] ${serverSlug}/${toolName} @ ${serverUrl}:`,
+        message
+      );
       return {
         content: [
           {

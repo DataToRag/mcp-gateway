@@ -12,6 +12,7 @@ import { createMetadataRouter } from "./src/gateway/oauth/metadata.js";
 import { createRegisterRouter } from "./src/gateway/oauth/register.js";
 import { createAuthorizeRouter } from "./src/gateway/oauth/authorize.js";
 import { createTokenRouter } from "./src/gateway/oauth/token.js";
+import { getPluginManager } from "./src/lib/plugin-manager.js";
 
 const dev = process.env.NODE_ENV !== "production";
 
@@ -25,6 +26,19 @@ async function main() {
   const pool = new ConnectionPool();
   const apiKeyValidator = new ApiKeyValidator(db);
   const baseUrl = env.GATEWAY_BASE_URL;
+
+  // Initialize plugin manager and start all active plugins
+  const pluginManager = getPluginManager(db, pool);
+  await pluginManager.startAll();
+
+  const shutdown = async () => {
+    console.log("Shutting down...");
+    await pluginManager.stopAll();
+    await pool.drain();
+    process.exit(0);
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 
   const app = express();
 

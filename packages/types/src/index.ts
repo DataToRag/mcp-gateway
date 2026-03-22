@@ -51,5 +51,13 @@ export interface McpGatewayManifest {
     required?: string[];
     optional?: string[];
   };
+  oauth?: {
+    provider: string;
+    authorizeUrl: string;
+    tokenUrl: string;
+    clientIdEnv: string;
+    clientSecretEnv: string;
+    scopes: string[];
+  };
   dockerfile?: string;
 }
