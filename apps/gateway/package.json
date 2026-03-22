@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build && tsup",
+    "build": "next build --webpack && tsup",
     "dev": "tsx server.ts",
     "start": "node dist/server.js"
   },
