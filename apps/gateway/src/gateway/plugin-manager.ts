@@ -239,7 +239,7 @@ export class PluginManager {
       }
 
       // Determine entrypoint from package.json before spawning
-      let entrypoint = "server/index.js";
+      let entrypoint = join("server", "index.js");
       if (pkg.scripts && (pkg.scripts as Record<string, string>).start) {
         const startScript = (pkg.scripts as Record<string, string>).start;
         entrypoint = parseEntrypointFromScript(startScript);
@@ -313,7 +313,7 @@ export class PluginManager {
     }
 
     // Determine entrypoint (caller provides it during install; startAll reads from package.json)
-    let resolvedEntrypoint = entrypoint ?? "server/index.js";
+    let resolvedEntrypoint = entrypoint ?? join("server", "index.js");
     if (!entrypoint) {
       const pkgPath = join(pluginDir, "package.json");
       if (existsSync(pkgPath)) {
