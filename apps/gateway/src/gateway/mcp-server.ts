@@ -6,6 +6,8 @@ import {
 import { eq, and } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
 import { tools, mcpServers, pluginConnections } from "@datatorag-mcp/db";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { ConnectionPool } from "./pool.js";
 
 const NAMESPACE_SEPARATOR = "__";
@@ -151,19 +153,39 @@ export function createMcpServer(
     );
 
     try {
-      const client = await pool.acquire(mcpServer.id, serverUrl);
-      try {
-        // TODO: forward userToken via X-User-Token header when the MCP SDK
-        // supports custom headers on callTool. For now, include it in the
-        // tool arguments metadata if present.
-        const result = await client.callTool({
-          name: toolName,
-          arguments: args as Record<string, unknown>,
-        });
-        return result;
-      } finally {
-        pool.release(mcpServer.id, client);
+      let result;
+      if (userToken) {
+        // One-shot client with user token header — avoids per-user pool complexity
+        const transport = new StreamableHTTPClientTransport(
+          new URL(serverUrl),
+          { requestInit: { headers: { "X-User-Token": userToken } } }
+        );
+        const oneShotClient = new Client(
+          { name: "datatorag-mcp", version: "0.1.0" },
+          { capabilities: {} }
+        );
+        try {
+          await oneShotClient.connect(transport);
+          result = await oneShotClient.callTool({
+            name: toolName,
+            arguments: args as Record<string, unknown>,
+          });
+        } finally {
+          await oneShotClient.close();
+        }
+      } else {
+        // No user token — use the shared connection pool
+        const pooledClient = await pool.acquire(mcpServer.id, serverUrl);
+        try {
+          result = await pooledClient.callTool({
+            name: toolName,
+            arguments: args as Record<string, unknown>,
+          });
+        } finally {
+          pool.release(mcpServer.id, pooledClient);
+        }
       }
+      return result;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown error";
