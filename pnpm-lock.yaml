@@ -26,6 +26,9 @@ importers:
       '@datatorag-mcp/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@datatorag-mcp/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.0
         version: 1.27.1(zod@3.25.76)
