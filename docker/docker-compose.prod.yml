@@ -43,7 +43,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       NODE_ENV: production
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8285/ || exit 1"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8285/health').then(r=>{if(!r.ok)throw r.status;process.exit(0)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
