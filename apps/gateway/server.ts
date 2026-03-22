@@ -1,7 +1,7 @@
 import next from "next";
 import express from "express";
 import { randomUUID } from "node:crypto";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, gt, isNull, or } from "drizzle-orm";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./src/gateway/mcp-server.js";
 import { ConnectionPool } from "./src/gateway/pool.js";
@@ -96,7 +96,11 @@ async function main() {
       .where(
         and(
           eq(oauthAccessTokens.token, rawToken),
-          isNull(oauthAccessTokens.revokedAt)
+          isNull(oauthAccessTokens.revokedAt),
+          or(
+            isNull(oauthAccessTokens.expiresAt),
+            gt(oauthAccessTokens.expiresAt, new Date())
+          )
         )
       )
       .limit(1);

@@ -14,16 +14,19 @@ interface PoolConfig {
   maxPerServer: number;
   idleTimeoutMs: number;
   healthCheckIntervalMs: number;
+  acquireTimeoutMs: number;
 }
 
 const DEFAULT_CONFIG: PoolConfig = {
   maxPerServer: 5,
   idleTimeoutMs: 5 * 60 * 1000, // 5 minutes
   healthCheckIntervalMs: 30 * 1000, // 30 seconds
+  acquireTimeoutMs: 5_000, // 5 seconds
 };
 
 export class ConnectionPool {
   private pools = new Map<string, PoolEntry[]>();
+  private waitQueues = new Map<string, Array<(client: Client) => void>>();
   private config: PoolConfig;
   private cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -55,16 +58,26 @@ export class ConnectionPool {
       return entry.client;
     }
 
-    // Pool exhausted — wait briefly and retry
-    await new Promise((r) => setTimeout(r, 100));
-    const retryIdle = pool.find((e) => !e.inUse);
-    if (retryIdle) {
-      retryIdle.inUse = true;
-      retryIdle.lastUsed = Date.now();
-      return retryIdle.client;
-    }
+    // Pool exhausted — wait for a release
+    return new Promise<Client>((resolve, reject) => {
+      const queue = this.waitQueues.get(serverId) ?? [];
+      this.waitQueues.set(serverId, queue);
 
-    throw new Error(`Connection pool exhausted for server ${serverId}`);
+      const timer = setTimeout(() => {
+        const idx = queue.indexOf(resolve);
+        if (idx !== -1) queue.splice(idx, 1);
+        reject(
+          new Error(
+            `Connection pool timeout after ${this.config.acquireTimeoutMs}ms for server ${serverId}`
+          )
+        );
+      }, this.config.acquireTimeoutMs);
+
+      queue.push((client: Client) => {
+        clearTimeout(timer);
+        resolve(client);
+      });
+    });
   }
 
   /** Release a client back to the pool. */
@@ -73,10 +86,19 @@ export class ConnectionPool {
     if (!pool) return;
 
     const entry = pool.find((e) => e.client === client);
-    if (entry) {
-      entry.inUse = false;
+    if (!entry) return;
+
+    // If someone is waiting, hand the connection directly to them
+    const queue = this.waitQueues.get(serverId);
+    if (queue && queue.length > 0) {
+      const waiter = queue.shift()!;
       entry.lastUsed = Date.now();
+      waiter(entry.client);
+      return;
     }
+
+    entry.inUse = false;
+    entry.lastUsed = Date.now();
   }
 
   /** Remove all connections for a server. */
@@ -92,6 +114,12 @@ export class ConnectionPool {
       }
     }
     this.pools.delete(serverId);
+
+    // Reject any waiters
+    const queue = this.waitQueues.get(serverId);
+    if (queue) {
+      this.waitQueues.delete(serverId);
+    }
   }
 
   /** Shut down all connections. */

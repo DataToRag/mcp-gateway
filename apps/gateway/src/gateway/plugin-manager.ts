@@ -1,5 +1,6 @@
 import { spawn, execFileSync, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync, mkdirSync, rmSync } from "node:fs";
+import { createServer } from "node:net";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { eq } from "drizzle-orm";
@@ -20,10 +21,17 @@ const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 export const NAMESPACE_SEPARATOR = "__";
 
+const MAX_RESPAWNS = 3;
+const RESPAWN_WINDOW_MS = 60_000;
+
 interface RunningPlugin {
   process: ChildProcess;
   port: number;
   slug: string;
+  serverId: string;
+  pluginDir: string;
+  entrypoint?: string;
+  crashTimes: number[];
 }
 
 export class PluginManager {
@@ -234,8 +242,7 @@ export class PluginManager {
       let entrypoint = "server/index.js";
       if (pkg.scripts && (pkg.scripts as Record<string, string>).start) {
         const startScript = (pkg.scripts as Record<string, string>).start;
-        const nodeMatch = startScript.match(/node\s+(.+)/);
-        entrypoint = nodeMatch ? nodeMatch[1].trim() : startScript;
+        entrypoint = parseEntrypointFromScript(startScript);
       } else if (pkg.main) {
         entrypoint = pkg.main as string;
       }
@@ -312,9 +319,7 @@ export class PluginManager {
       if (existsSync(pkgPath)) {
         const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
         if (pkg.scripts?.start) {
-          const startScript = pkg.scripts.start as string;
-          const nodeMatch = startScript.match(/node\s+(.+)/);
-          resolvedEntrypoint = nodeMatch ? nodeMatch[1].trim() : startScript;
+          resolvedEntrypoint = parseEntrypointFromScript(pkg.scripts.start as string);
         } else if (pkg.main) {
           resolvedEntrypoint = pkg.main;
         }
@@ -334,12 +339,46 @@ export class PluginManager {
       console.error(`[${slug}] ${data.toString().trimEnd()}`);
     });
 
-    child.on("exit", (code) => {
-      console.log(`[plugin-manager] ${slug} exited with code ${code}`);
+    const existing = this.processes.get(slug);
+    const crashTimes = existing?.crashTimes ?? [];
+
+    child.on("exit", (code, signal) => {
+      console.log(`[plugin-manager] ${slug} exited with code ${code} signal ${signal}`);
       this.processes.delete(slug);
+
+      // Auto-respawn if crash was unexpected (non-zero exit, not SIGTERM)
+      if (code !== 0 && signal !== "SIGTERM") {
+        const now = Date.now();
+        const recentCrashes = crashTimes.filter(
+          (t) => now - t < RESPAWN_WINDOW_MS
+        );
+        recentCrashes.push(now);
+
+        if (recentCrashes.length <= MAX_RESPAWNS) {
+          console.log(
+            `[plugin-manager] respawning ${slug} (attempt ${recentCrashes.length}/${MAX_RESPAWNS})`
+          );
+          this.spawnPlugin(serverId, slug, pluginDir, port, entrypoint).catch(
+            (err) =>
+              console.error(`[plugin-manager] respawn failed for ${slug}:`, err)
+          );
+        } else {
+          console.error(
+            `[plugin-manager] ${slug} crashed ${MAX_RESPAWNS} times in ${RESPAWN_WINDOW_MS / 1000}s, not restarting`
+          );
+        }
+      }
     });
 
-    this.processes.set(slug, { process: child, port, slug });
+    this.processes.set(slug, {
+      process: child,
+      port,
+      slug,
+      serverId,
+      pluginDir,
+      entrypoint,
+      crashTimes,
+    });
   }
 
   private async waitForHealth(port: number): Promise<void> {
@@ -415,6 +454,11 @@ export class PluginManager {
     while (usedPorts.has(port)) {
       port++;
     }
+
+    // Verify the port is actually free on the OS
+    while (!(await isPortFree(port))) {
+      port++;
+    }
     return port;
   }
 }
@@ -428,4 +472,28 @@ function parseGithubUrl(url: string): { owner: string; name: string } {
     throw new Error(`Cannot parse GitHub URL: ${url}`);
   }
   return { owner: match[1], name: match[2] };
+}
+
+function parseEntrypointFromScript(script: string): string {
+  // Extract the file argument from a node start script, skipping flags.
+  // e.g. "node --max-old-space-size=4096 server.js" → "server.js"
+  const parts = script.split(/\s+/);
+  // Find the last part that looks like a file (not a flag, not "node")
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    if (p !== "node" && !p.startsWith("-")) {
+      return p;
+    }
+  }
+  return script;
+}
+
+function isPortFree(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once("error", () => resolve(false));
+    server.listen(port, "127.0.0.1", () => {
+      server.close(() => resolve(true));
+    });
+  });
 }
