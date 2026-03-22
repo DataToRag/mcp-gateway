@@ -1,8 +1,7 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, execFileSync, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { execSync } from "node:child_process";
 import { eq } from "drizzle-orm";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -18,7 +17,8 @@ import type { ConnectionPool } from "./pool.js";
 const PLUGINS_DIR = join(homedir(), ".datatorag", "plugins");
 const BASE_PORT = 40000;
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-const NAMESPACE_SEPARATOR = "__";
+
+export const NAMESPACE_SEPARATOR = "__";
 
 interface RunningPlugin {
   process: ChildProcess;
@@ -126,32 +126,34 @@ export class PluginManager {
       .from(mcpServers)
       .where(eq(mcpServers.status, "active"));
 
-    for (const server of activeServers) {
-      const pluginDir = join(PLUGINS_DIR, server.slug);
-      if (!existsSync(pluginDir)) {
-        console.warn(
-          `[plugin-manager] plugin dir missing for ${server.slug}, skipping`
-        );
-        continue;
-      }
+    await Promise.all(
+      activeServers.map(async (server) => {
+        const pluginDir = join(PLUGINS_DIR, server.slug);
+        if (!existsSync(pluginDir)) {
+          console.warn(
+            `[plugin-manager] plugin dir missing for ${server.slug}, skipping`
+          );
+          return;
+        }
 
-      try {
-        await this.spawnPlugin(
-          server.id,
-          server.slug,
-          pluginDir,
-          server.containerPort
-        );
-        console.log(
-          `[plugin-manager] started ${server.slug} on port ${server.containerPort}`
-        );
-      } catch (err) {
-        console.error(
-          `[plugin-manager] failed to start ${server.slug}:`,
-          err
-        );
-      }
-    }
+        try {
+          await this.spawnPlugin(
+            server.id,
+            server.slug,
+            pluginDir,
+            server.containerPort
+          );
+          console.log(
+            `[plugin-manager] started ${server.slug} on port ${server.containerPort}`
+          );
+        } catch (err) {
+          console.error(
+            `[plugin-manager] failed to start ${server.slug}:`,
+            err
+          );
+        }
+      })
+    );
   }
 
   async stopAll(): Promise<void> {
@@ -175,7 +177,7 @@ export class PluginManager {
       if (existsSync(pluginDir)) {
         rmSync(pluginDir, { recursive: true, force: true });
       }
-      execSync(`git clone --depth 1 ${githubRepoUrl} ${pluginDir}`, {
+      execFileSync("git", ["clone", "--depth", "1", githubRepoUrl, pluginDir], {
         stdio: "pipe",
       });
 
@@ -213,20 +215,29 @@ export class PluginManager {
 
       // Install dependencies
       console.log(`[plugin-manager] installing deps for ${slug}...`);
-      const installCmd = existsSync(join(pluginDir, "pnpm-lock.yaml"))
-        ? "pnpm install --frozen-lockfile"
+      const usePnpm = existsSync(join(pluginDir, "pnpm-lock.yaml"));
+      const pmBin = usePnpm ? "pnpm" : "npm";
+      const installArgs = usePnpm
+        ? ["install", "--frozen-lockfile"]
         : existsSync(join(pluginDir, "package-lock.json"))
-          ? "npm ci"
-          : "npm install";
-      execSync(installCmd, { cwd: pluginDir, stdio: "pipe" });
+          ? ["ci"]
+          : ["install"];
+      execFileSync(pmBin, installArgs, { cwd: pluginDir, stdio: "pipe" });
 
       // Build if build script exists
       if (pkg.scripts && (pkg.scripts as Record<string, string>).build) {
         console.log(`[plugin-manager] building ${slug}...`);
-        const buildCmd = installCmd.startsWith("pnpm")
-          ? "pnpm run build"
-          : "npm run build";
-        execSync(buildCmd, { cwd: pluginDir, stdio: "pipe" });
+        execFileSync(pmBin, ["run", "build"], { cwd: pluginDir, stdio: "pipe" });
+      }
+
+      // Determine entrypoint from package.json before spawning
+      let entrypoint = "server/index.js";
+      if (pkg.scripts && (pkg.scripts as Record<string, string>).start) {
+        const startScript = (pkg.scripts as Record<string, string>).start;
+        const nodeMatch = startScript.match(/node\s+(.+)/);
+        entrypoint = nodeMatch ? nodeMatch[1].trim() : startScript;
+      } else if (pkg.main) {
+        entrypoint = pkg.main as string;
       }
 
       // Assign port
@@ -237,7 +248,7 @@ export class PluginManager {
         .where(eq(mcpServers.id, serverId));
 
       // Spawn process
-      await this.spawnPlugin(serverId, slug, pluginDir, port);
+      await this.spawnPlugin(serverId, slug, pluginDir, port, entrypoint);
 
       // Health check
       await this.waitForHealth(port);
@@ -278,7 +289,8 @@ export class PluginManager {
     serverId: string,
     slug: string,
     pluginDir: string,
-    port: number
+    port: number,
+    entrypoint?: string
   ): Promise<void> {
     // Resolve env vars from DB
     const envRows = await this.db
@@ -288,28 +300,28 @@ export class PluginManager {
 
     const resolvedEnv: Record<string, string> = { PORT: String(port) };
     for (const row of envRows) {
-      // $-prefixed values resolve to host env vars
       resolvedEnv[row.key] = row.value.startsWith("$")
         ? process.env[row.value.slice(1)] ?? ""
         : row.value;
     }
 
-    // Determine entrypoint
-    const pkgPath = join(pluginDir, "package.json");
-    let entrypoint = "server/index.js";
-    if (existsSync(pkgPath)) {
-      const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-      if (pkg.scripts?.start) {
-        // Extract the file from "node xxx.js" or just use the script
-        const startScript = pkg.scripts.start as string;
-        const nodeMatch = startScript.match(/node\s+(.+)/);
-        entrypoint = nodeMatch ? nodeMatch[1].trim() : startScript;
-      } else if (pkg.main) {
-        entrypoint = pkg.main;
+    // Determine entrypoint (caller provides it during install; startAll reads from package.json)
+    let resolvedEntrypoint = entrypoint ?? "server/index.js";
+    if (!entrypoint) {
+      const pkgPath = join(pluginDir, "package.json");
+      if (existsSync(pkgPath)) {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+        if (pkg.scripts?.start) {
+          const startScript = pkg.scripts.start as string;
+          const nodeMatch = startScript.match(/node\s+(.+)/);
+          resolvedEntrypoint = nodeMatch ? nodeMatch[1].trim() : startScript;
+        } else if (pkg.main) {
+          resolvedEntrypoint = pkg.main;
+        }
       }
     }
 
-    const child = spawn("node", [entrypoint], {
+    const child = spawn("node", [resolvedEntrypoint], {
       cwd: pluginDir,
       env: { ...process.env, ...resolvedEnv },
       stdio: ["ignore", "pipe", "pipe"],

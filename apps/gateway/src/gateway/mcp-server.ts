@@ -9,8 +9,7 @@ import { tools, mcpServers, pluginConnections } from "@datatorag-mcp/db";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { ConnectionPool } from "./pool.js";
-
-const NAMESPACE_SEPARATOR = "__";
+import { NAMESPACE_SEPARATOR } from "./plugin-manager.js";
 
 /**
  * Creates a new MCP Server instance for a client session.
