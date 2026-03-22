@@ -58,6 +58,7 @@ export interface McpGatewayManifest {
     clientIdEnv: string;
     clientSecretEnv: string;
     scopes: string[];
+    [key: string]: string | string[];
   };
   dockerfile?: string;
 }

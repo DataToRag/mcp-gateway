@@ -65,5 +65,13 @@ export async function GET(request: NextRequest, { params }: Props) {
   authorizeUrl.searchParams.set("scope", oauth.scopes.join(" "));
   authorizeUrl.searchParams.set("state", state);
 
+  // Forward extra authorize params from the manifest (e.g. access_type, prompt)
+  const knownKeys = new Set(["provider", "authorizeUrl", "tokenUrl", "clientIdEnv", "clientSecretEnv", "scopes"]);
+  for (const [key, value] of Object.entries(oauth)) {
+    if (!knownKeys.has(key) && typeof value === "string") {
+      authorizeUrl.searchParams.set(key, value);
+    }
+  }
+
   return NextResponse.redirect(authorizeUrl.toString());
 }
