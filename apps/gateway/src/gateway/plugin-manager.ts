@@ -230,12 +230,14 @@ export class PluginManager {
         : existsSync(join(pluginDir, "package-lock.json"))
           ? ["ci"]
           : ["install"];
-      execFileSync(pmBin, installArgs, { cwd: pluginDir, stdio: "pipe" });
+      // Override NODE_ENV so npm installs devDependencies (e.g. typescript)
+      const pluginEnv = { ...process.env, NODE_ENV: "development" };
+      execFileSync(pmBin, installArgs, { cwd: pluginDir, stdio: "pipe", env: pluginEnv });
 
       // Build if build script exists
       if (pkg.scripts && (pkg.scripts as Record<string, string>).build) {
         console.log(`[plugin-manager] building ${slug}...`);
-        execFileSync(pmBin, ["run", "build"], { cwd: pluginDir, stdio: "pipe" });
+        execFileSync(pmBin, ["run", "build"], { cwd: pluginDir, stdio: "pipe", env: pluginEnv });
       }
 
       // Determine entrypoint from package.json before spawning
