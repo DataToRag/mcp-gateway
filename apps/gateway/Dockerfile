@@ -29,5 +29,5 @@ ENV DATABASE_URL=postgresql://placeholder:placeholder@placeholder:5432/placehold
 RUN pnpm run build --filter=@datatorag-mcp/gateway
 
 WORKDIR /app/apps/gateway
-EXPOSE 8285
+EXPOSE 80
 CMD ["node", "dist/server.js"]

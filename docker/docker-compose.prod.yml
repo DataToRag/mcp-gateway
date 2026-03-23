@@ -34,16 +34,16 @@ services:
       context: ..
       dockerfile: apps/gateway/Dockerfile
     ports:
-      - "8285:8285"
+      - "80:80"
     environment:
       DATABASE_URL: postgresql://datatoragmcp:${POSTGRES_PASSWORD}@postgres:5432/datatoragmcp
-      GATEWAY_PORT: "8285"
-      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-http://localhost:8285}
+      GATEWAY_PORT: "80"
+      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-http://localhost}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       NODE_ENV: production
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:8285/health').then(r=>{if(!r.ok)throw r.status;process.exit(0)}).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost/health').then(r=>{if(!r.ok)throw r.status;process.exit(0)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
