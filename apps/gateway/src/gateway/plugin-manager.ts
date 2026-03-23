@@ -231,7 +231,7 @@ export class PluginManager {
           ? ["ci"]
           : ["install"];
       // Override NODE_ENV so npm installs devDependencies (e.g. typescript)
-      const pluginEnv = { ...process.env, NODE_ENV: "development" };
+      const pluginEnv = { ...process.env, NODE_ENV: "development" as const };
       execFileSync(pmBin, installArgs, { cwd: pluginDir, stdio: "pipe", env: pluginEnv });
 
       // Build if build script exists
