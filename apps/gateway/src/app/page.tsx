@@ -72,7 +72,7 @@ export default async function HomePage() {
             style={{ animationDelay: "0.25s" }}
           >
             <h2 className="font-display text-xl font-bold text-foreground">
-              Available Tools
+              MCP Servers
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               All tools are open source. Inspect, fork, or self-host any of
