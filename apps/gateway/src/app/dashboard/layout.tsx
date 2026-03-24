@@ -14,15 +14,15 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-r border-border bg-muted/30">
+      <aside className="w-56 shrink-0 border-r border-border">
         <div className="flex h-16 items-center gap-3 border-b border-border px-5">
           <Image
             src="/datatorag-logo-256.png"
             alt="DataToRAG"
-            width={28}
-            height={28}
+            width={26}
+            height={26}
           />
-          <span className="font-display text-sm font-bold text-primary">
+          <span className="font-display text-sm font-bold text-foreground">
             DataToRAG
           </span>
         </div>
@@ -32,7 +32,7 @@ export default function DashboardLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="block rounded-[var(--radius)] px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               {item.label}
             </Link>
@@ -42,9 +42,9 @@ export default function DashboardLayout({
         <div className="mt-auto border-t border-border px-3 py-4">
           <Link
             href="/"
-            className="block rounded-[var(--radius)] px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
-            Back to Marketplace
+            ← Back to Home
           </Link>
         </div>
       </aside>

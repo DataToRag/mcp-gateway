@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Roboto, PT_Mono } from "next/font/google";
+import { Montserrat, Inter, PT_Mono } from "next/font/google";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -8,10 +8,10 @@ const montserrat = Montserrat({
   weight: ["500", "600", "700", "800"],
 });
 
-const roboto = Roboto({
-  variable: "--font-roboto",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
 });
 
 const ptMono = PT_Mono({
@@ -21,9 +21,9 @@ const ptMono = PT_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DataToRAG — Open Source MCP Tool Marketplace",
+  title: "DataToRAG — Connect Your Data to AI",
   description:
-    "Connect any MCP client with a single API key to access a marketplace of open-source MCP tools.",
+    "Link your data sources and let your AI assistant access everything. No engineering required.",
 };
 
 export default function RootLayout({
@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${montserrat.variable} ${roboto.variable} ${ptMono.variable} h-full antialiased`}
+      className={`${montserrat.variable} ${inter.variable} ${ptMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>

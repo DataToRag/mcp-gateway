@@ -14,41 +14,35 @@ export function ToolCard({
   name,
   description,
   toolCount,
-  creditsPerCall,
-  licenseSpdx,
 }: ToolCardProps) {
   return (
     <Link
       href={`/tools/${slug}`}
-      className="block group rounded-[var(--radius)] border border-border bg-background p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5"
+      className="group flex flex-col rounded-2xl border border-border bg-background p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:-translate-y-0.5"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius)] bg-muted font-display text-sm font-bold text-secondary">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent font-display text-base font-bold text-accent-foreground">
           {name.charAt(0).toUpperCase()}
         </div>
-        {licenseSpdx && (
-          <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-            {licenseSpdx}
-          </span>
-        )}
+        <h3 className="font-display text-base font-semibold text-foreground transition-colors group-hover:text-primary">
+          {name}
+        </h3>
       </div>
 
-      <h3 className="mt-3 font-display text-[15px] font-semibold text-foreground transition-colors group-hover:text-secondary">
-        {name}
-      </h3>
-
       {description && (
-        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground line-clamp-2">
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground line-clamp-2">
           {description}
         </p>
       )}
 
-      <div className="mt-4 flex items-center gap-3 text-[11px] font-medium text-muted-foreground">
-        <span>
-          {toolCount} {toolCount === 1 ? "tool" : "tools"}
+      <div className="mt-auto pt-4">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="opacity-70">
+            <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8z" fill="currentColor" />
+            <path d="M8 4a.75.75 0 01.75.75v2.5h2.5a.75.75 0 010 1.5h-2.5v2.5a.75.75 0 01-1.5 0v-2.5h-2.5a.75.75 0 010-1.5h2.5v-2.5A.75.75 0 018 4z" fill="currentColor" />
+          </svg>
+          {toolCount} {toolCount === 1 ? "capability" : "capabilities"}
         </span>
-        <span className="h-3 w-px bg-border" />
-        <span>{creditsPerCall} credit/call</span>
       </div>
     </Link>
   );

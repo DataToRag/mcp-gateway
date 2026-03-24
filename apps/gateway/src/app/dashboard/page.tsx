@@ -25,47 +25,47 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-primary">
+      <h1 className="font-display text-2xl font-bold text-foreground">
         Dashboard
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Overview of your DataToRAG usage.
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Overview of your connected data sources.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-[var(--radius)] border border-border p-5">
-          <p className="text-sm text-muted-foreground">Active Servers</p>
-          <p className="mt-1 font-display text-3xl font-bold text-primary">
+        <div className="rounded-2xl border border-border p-6">
+          <p className="text-sm text-muted-foreground">Connected Sources</p>
+          <p className="mt-1 font-display text-3xl font-bold text-foreground">
             {stats.servers}
           </p>
         </div>
-        <div className="rounded-[var(--radius)] border border-border p-5">
-          <p className="text-sm text-muted-foreground">Total Tools</p>
-          <p className="mt-1 font-display text-3xl font-bold text-primary">
+        <div className="rounded-2xl border border-border p-6">
+          <p className="text-sm text-muted-foreground">Capabilities</p>
+          <p className="mt-1 font-display text-3xl font-bold text-foreground">
             {stats.tools}
           </p>
         </div>
-        <div className="rounded-[var(--radius)] border border-border p-5">
+        <div className="rounded-2xl border border-border p-6">
           <p className="text-sm text-muted-foreground">Credits</p>
-          <p className="mt-1 font-display text-3xl font-bold text-primary">
+          <p className="mt-1 font-display text-3xl font-bold text-foreground">
             100
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">Free tier</p>
         </div>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-12">
         <h2 className="font-display text-lg font-bold text-foreground">
           Quick Start
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           Add this to your MCP client config to connect.
         </p>
-        <pre className="mt-4 overflow-x-auto rounded-[var(--radius)] border border-border bg-primary p-5 font-mono text-sm text-primary-foreground">
+        <pre className="mt-4 overflow-x-auto rounded-2xl border border-border bg-[#1C1917] p-5 font-mono text-sm leading-relaxed text-[#E7E5E4]">
 {`{
   "mcpServers": {
-    "datatorag-mcp": {
-      "url": "https://gateway.datatorag.com/mcp"
+    "datatorag": {
+      "url": "https://datatorag.com/mcp"
     }
   }
 }`}
