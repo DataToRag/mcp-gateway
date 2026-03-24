@@ -109,11 +109,13 @@ User-facing language avoids technical jargon:
 
 | Internal | User-facing |
 |----------|-------------|
-| MCP Server | Data Source |
+| MCP Server | MCP Integration / MCP Source |
 | Tools | Capabilities |
-| Active Servers | Connected Sources |
+| Active Servers | MCP Sources |
 | tool count | X capabilities |
 | credits/call | (hide or simplify) |
+
+Keep "MCP" visible in the UI — it helps users understand the AI connection protocol. Use friendly framing ("MCP Integrations", "MCP Sources") rather than hiding it entirely behind generic terms.
 
 ## Animation
 

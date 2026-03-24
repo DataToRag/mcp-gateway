@@ -29,12 +29,12 @@ export default async function DashboardPage() {
         Dashboard
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Overview of your connected data sources.
+        Your MCP integrations at a glance.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border p-6">
-          <p className="text-sm text-muted-foreground">Connected Sources</p>
+          <p className="text-sm text-muted-foreground">MCP Sources</p>
           <p className="mt-1 font-display text-3xl font-bold text-foreground">
             {stats.servers}
           </p>

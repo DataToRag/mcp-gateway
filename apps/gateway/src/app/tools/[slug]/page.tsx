@@ -168,7 +168,7 @@ export default async function ToolDetailPage({ params }: Props) {
               Connect
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Add this to your MCP client config to access all data sources through the gateway.
+              Add this to your MCP client config to access all integrations through the gateway.
             </p>
             <pre className="mt-4 overflow-x-auto rounded-2xl border border-border bg-[#1C1917] p-5 font-mono text-sm leading-relaxed text-[#E7E5E4]">
 {`{

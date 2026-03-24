@@ -22,7 +22,7 @@ export function Navbar() {
             href="/"
             className="rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            Data Sources
+            MCP Integrations
           </Link>
           <Link
             href="/dashboard"

@@ -45,8 +45,8 @@ export default async function HomePage() {
             className="animate-fade-in-up mt-5 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
             style={{ animationDelay: "0.08s" }}
           >
-            Link Google Workspace, databases, and tools — then ask your AI
-            assistant anything about your data.
+            Link Google Workspace, databases, and more through MCP — then
+            ask your AI assistant anything about your data.
           </p>
           <div
             className="animate-fade-in-up mt-8 flex items-center gap-3"
@@ -113,17 +113,17 @@ export default async function HomePage() {
         <section id="sources" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <div className="animate-fade-in-up" style={{ animationDelay: "0.25s" }}>
             <h2 className="font-display text-xl font-bold text-foreground">
-              Data Sources
+              MCP Integrations
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Connect the services where your data lives. All integrations are open source.
+              Connect your data through the Model Context Protocol. All integrations are open source.
             </p>
           </div>
 
           {servers.length === 0 ? (
             <div className="mt-16 text-center">
               <p className="text-base text-muted-foreground">
-                No data sources available yet.
+                No MCP integrations available yet.
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 We&apos;re adding integrations — check back soon.
@@ -179,7 +179,7 @@ export default async function HomePage() {
       </main>
 
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        DataToRAG &middot; All integrations are open source.
+        DataToRAG &middot; All MCP integrations are open source.
       </footer>
     </>
   );
