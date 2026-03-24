@@ -48,6 +48,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    volumes:
+      - plugins-data:/root/.datatorag/plugins
     depends_on:
       db-init:
         condition: service_completed_successfully
@@ -66,3 +68,4 @@ networks:
 
 volumes:
   postgres-data:
+  plugins-data:
