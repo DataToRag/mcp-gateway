@@ -3,16 +3,16 @@
 :root {
   --background: #FAFAF8;
   --foreground: #1C1917;
-  --primary: #0F766E;
+  --primary: #2D5BD6;
   --primary-foreground: #FFFFFF;
   --secondary: #F0EFEB;
   --secondary-foreground: #44403C;
   --muted: #F0EFEB;
   --muted-foreground: #78716C;
-  --accent: #F0FDFA;
-  --accent-foreground: #0F766E;
+  --accent: #EEF2FF;
+  --accent-foreground: #2D5BD6;
   --border: #E7E5E4;
-  --ring: #0F766E;
+  --ring: #2D5BD6;
   --destructive: #DC2626;
   --success: #16A34A;
   --warning: #D97706;

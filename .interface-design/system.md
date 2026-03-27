@@ -32,16 +32,16 @@ Warm off-white base with whisper elevation shifts:
 ```css
 --background: #FAFAF8      /* warm off-white */
 --foreground: #1C1917       /* warm near-black (stone-900) */
---primary: #0F766E          /* teal-700 — action, connected, go */
+--primary: #2D5BD6          /* logo dark blue — action, brand, connected */
 --primary-foreground: #FFF
 --secondary: #F0EFEB        /* warm cream */
 --secondary-foreground: #44403C  /* stone-700 */
 --muted: #F0EFEB
 --muted-foreground: #78716C /* stone-500 */
---accent: #F0FDFA           /* teal-50 tint */
---accent-foreground: #0F766E
+--accent: #EEF2FF           /* blue-50 tint */
+--accent-foreground: #2D5BD6
 --border: #E7E5E4           /* stone-200 */
---ring: #0F766E
+--ring: #2D5BD6
 --destructive: #DC2626
 --success: #16A34A
 --warning: #D97706
