@@ -24,7 +24,7 @@ export function getAllPosts(): BlogPost[] {
     .readdirSync(BLOG_DIR)
     .filter((f) => f.endsWith(".md"))
     .map((f) => getPostBySlug(f.replace(/\.md$/, "")))
-    .filter(Boolean)
+    .filter((p): p is BlogPost => p !== null)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
