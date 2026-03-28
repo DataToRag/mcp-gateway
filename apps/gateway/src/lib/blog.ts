@@ -12,6 +12,8 @@ export interface BlogPost {
   date: string;
   readTime: string;
   author: string;
+  authorImage?: string;
+  category?: string;
   ogImage?: string;
   content: string;
   html: string;
@@ -46,6 +48,8 @@ export function getPostBySlug(slug: string): BlogPost | null {
     date: data.date ?? new Date().toISOString().slice(0, 10),
     readTime,
     author: data.author ?? "DataToRAG",
+    authorImage: data.authorImage,
+    category: data.category,
     ogImage: data.ogImage,
     content,
     html,

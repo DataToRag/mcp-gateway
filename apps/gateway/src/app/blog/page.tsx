@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { getAllPosts } from "@/lib/blog";
 import { Navbar } from "@/components/navbar";
 
@@ -15,6 +16,44 @@ export const metadata: Metadata = {
     url: "https://datatorag.com/blog",
   },
 };
+
+function AuthorAvatar({
+  author,
+  authorImage,
+  size = 24,
+}: {
+  author: string;
+  authorImage?: string;
+  size?: number;
+}) {
+  if (authorImage) {
+    return (
+      <Image
+        src={authorImage}
+        alt={author}
+        width={size}
+        height={size}
+        className="rounded-full object-cover"
+      />
+    );
+  }
+
+  const initials = author
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div
+      className="flex items-center justify-center rounded-full bg-primary text-primary-foreground"
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
+    >
+      <span className="font-semibold leading-none">{initials}</span>
+    </div>
+  );
+}
 
 export default function BlogListingPage() {
   const posts = getAllPosts();
@@ -46,18 +85,14 @@ export default function BlogListingPage() {
                   className="animate-fade-in-up group block rounded-2xl border border-border p-6 transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:-translate-y-0.5"
                   style={{ animationDelay: `${0.1 + i * 0.05}s` }}
                 >
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <time dateTime={post.date}>
-                      {new Date(post.date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </time>
-                    <span className="text-border">·</span>
-                    <span>{post.readTime}</span>
-                  </div>
-                  <h2 className="mt-2 font-display text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
+                  {post.category && (
+                    <span className="inline-block rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-accent-foreground">
+                      {post.category}
+                    </span>
+                  )}
+                  <h2
+                    className={`font-display text-lg font-semibold text-foreground transition-colors group-hover:text-primary ${post.category ? "mt-2" : ""}`}
+                  >
                     {post.title}
                   </h2>
                   {post.excerpt && (
@@ -65,6 +100,28 @@ export default function BlogListingPage() {
                       {post.excerpt}
                     </p>
                   )}
+                  <div className="mt-4 flex items-center gap-2.5">
+                    <AuthorAvatar
+                      author={post.author}
+                      authorImage={post.authorImage}
+                      size={22}
+                    />
+                    <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground/80">
+                        {post.author}
+                      </span>
+                      <span className="text-border">·</span>
+                      <time dateTime={post.date}>
+                        {new Date(post.date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </time>
+                      <span className="text-border">·</span>
+                      <span>{post.readTime}</span>
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>

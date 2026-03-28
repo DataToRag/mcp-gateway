@@ -2,7 +2,8 @@
 title: "Connect Google Workspace to Claude: How Teams Are Saving Hours Every Week"
 excerpt: "Knowledge workers lose hours daily switching between Gmail, Drive, Calendar, and Docs. With MCP, your AI assistant can access it all — securely, in real time. Here's what that looks like in practice."
 date: "2026-03-28"
-author: "DataToRAG"
+author: "Manuel Yang"
+category: "Integration"
 ---
 
 Your team runs on Google Workspace. Email, documents, spreadsheets, calendars, task lists — it's the operating system of modern work. And yet, when someone on your team opens an AI assistant like Claude, it has no idea any of that exists.

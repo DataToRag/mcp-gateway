@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { Navbar } from "@/components/navbar";
 
@@ -38,6 +39,39 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+function AuthorAvatar({
+  author,
+  authorImage,
+}: {
+  author: string;
+  authorImage?: string;
+}) {
+  if (authorImage) {
+    return (
+      <Image
+        src={authorImage}
+        alt={author}
+        width={32}
+        height={32}
+        className="rounded-full object-cover"
+      />
+    );
+  }
+
+  const initials = author
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+      {initials}
+    </div>
+  );
+}
+
 export default async function BlogArticlePage({ params }: Props) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
@@ -49,7 +83,13 @@ export default async function BlogArticlePage({ params }: Props) {
     headline: post.title,
     description: post.excerpt,
     datePublished: post.date,
-    author: { "@type": "Organization", name: post.author },
+    author: {
+      "@type": "Person",
+      name: post.author,
+      ...(post.authorImage
+        ? { image: `https://datatorag.com${post.authorImage}` }
+        : {}),
+    },
     publisher: {
       "@type": "Organization",
       name: "DataToRAG",
@@ -85,20 +125,41 @@ export default async function BlogArticlePage({ params }: Props) {
           </Link>
 
           <header className="mt-8">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <time dateTime={post.date}>
-                {new Date(post.date).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </time>
-              <span className="text-border">·</span>
-              <span>{post.readTime}</span>
-            </div>
-            <h1 className="mt-4 font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
+            {post.category && (
+              <span className="inline-block rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
+                {post.category}
+              </span>
+            )}
+            <h1
+              className={`font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl ${post.category ? "mt-3" : ""}`}
+            >
               {post.title}
             </h1>
+
+            <div className="mt-5 flex items-center gap-3">
+              <AuthorAvatar
+                author={post.author}
+                authorImage={post.authorImage}
+              />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                <span className="font-medium text-foreground">
+                  {post.author}
+                </span>
+                <span className="text-border">·</span>
+                <time
+                  dateTime={post.date}
+                  className="text-muted-foreground"
+                >
+                  {new Date(post.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+                <span className="text-border">·</span>
+                <span className="text-muted-foreground">{post.readTime}</span>
+              </div>
+            </div>
           </header>
 
           <div
