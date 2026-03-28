@@ -167,7 +167,7 @@ export default async function HomePage() {
                 warehouses, and more.
               </p>
               <a
-                href="mailto:hello@datatorag.com"
+                href="mailto:support@datatorag.com"
                 className="mt-6 inline-block rounded-[var(--radius)] bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90"
               >
                 Contact Us
@@ -353,7 +353,7 @@ export default async function HomePage() {
                 Start Free
               </Link>
               <a
-                href="mailto:hello@datatorag.com"
+                href="mailto:support@datatorag.com"
                 className="rounded-[var(--radius)] border border-white/20 px-6 py-3 text-sm font-medium text-white transition-all hover:border-white/40 hover:bg-white/5"
               >
                 Contact Sales
