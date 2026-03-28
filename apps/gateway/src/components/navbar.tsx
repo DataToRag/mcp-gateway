@@ -8,6 +8,7 @@ const navLinks = [
   { href: "#platform", label: "Platform" },
   { href: "#services", label: "Services" },
   { href: "#integrations", label: "Integrations" },
+  { href: "/blog", label: "Blog", isRoute: true },
   { href: "/dashboard", label: "Dashboard", isRoute: true },
 ];
 
