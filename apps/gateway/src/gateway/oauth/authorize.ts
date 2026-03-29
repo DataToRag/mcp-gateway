@@ -105,17 +105,22 @@ export function createAuthorizeRouter(
     googleAuthUrl.searchParams.set("state", oauthState);
     googleAuthUrl.searchParams.set("prompt", "select_account");
 
+    console.log("[oauth/authorize] redirecting to Google, state length:", oauthState.length);
+    console.log("[oauth/authorize] redirect_uri to Google:", `${config.baseUrl}/oauth/callback`);
     res.redirect(googleAuthUrl.toString());
   });
 
   // Google OAuth callback — exchange Google code, find/create user, issue auth code
   router.get("/oauth/callback", async (req, res) => {
+    console.log("[oauth/callback] query:", JSON.stringify(req.query));
+    console.log("[oauth/callback] full url:", req.originalUrl);
     const { code: googleCode, state: oauthState } = req.query as Record<
       string,
       string
     >;
 
     if (!googleCode || !oauthState) {
+      console.log("[oauth/callback] missing params — code:", !!googleCode, "state:", !!oauthState);
       res.status(400).send("Missing code or state from Google");
       return;
     }
