@@ -23,6 +23,8 @@ Search-and-destroy these in every draft. They are statistically the strongest AI
 
 **Closers:** "In conclusion", "By embracing", "Overall", "In summary", "As we look to the future"
 
+**Punctuation:** Em dashes (—). The "ChatGPT dash." If you find yourself reaching for one, use a period, comma, colon, or parentheses instead. Restructure the sentence if needed. More than zero em dashes per article is too many.
+
 **Stock phrases (100x+ more frequent in AI than human text):** "provide valuable insights", "gain valuable insights", "plays a crucial role in shaping", "a rich tapestry", "opens new avenues", "adds a layer of complexity", "paving the way", "shed light on", "left an indelible mark"
 
 ## Structural Rules
@@ -68,7 +70,7 @@ The audience is technical decision-makers at mid-size companies — VPs of Engin
 1. Ctrl+F for every word in the banned list
 2. Check paragraph lengths — are three in a row the same size?
 3. Check sentence lengths — is there real variation?
-4. Count em dashes — if more than 3-4 per article, cut some
+4. Search for em dashes (—) and replace every one with periods, commas, colons, or parentheses
 5. Find one place you stated an opinion and one place you used a specific number or name
 6. Read the first and last paragraphs — do they sound like a person or a press release?
 7. Read the whole thing aloud — mark anything you'd never say in conversation
