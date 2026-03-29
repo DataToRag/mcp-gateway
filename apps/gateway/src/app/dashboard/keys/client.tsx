@@ -82,7 +82,7 @@ export function ApiKeysClient() {
       )}
 
       {/* Create new key */}
-      <div className="flex items-end gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <label className="text-sm font-medium text-foreground">
             Key name
@@ -97,7 +97,7 @@ export function ApiKeysClient() {
         </div>
         <button
           onClick={createKey}
-          className="rounded-[var(--radius)] bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/90"
+          className="shrink-0 rounded-[var(--radius)] bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/90"
         >
           Create Key
         </button>
@@ -117,13 +117,13 @@ export function ApiKeysClient() {
             {activeKeys.map((key) => (
               <div
                 key={key.id}
-                className="flex items-center justify-between rounded-[var(--radius)] border border-border p-4"
+                className="flex flex-col gap-3 rounded-[var(--radius)] border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">
                     {key.name}
                   </p>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <code className="font-mono">{key.keyPrefix}...</code>
                     <span>
                       Created{" "}
@@ -165,7 +165,7 @@ export function ApiKeysClient() {
                   <p className="text-sm font-medium text-foreground line-through">
                     {key.name}
                   </p>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <code className="font-mono">{key.keyPrefix}...</code>
                     <span>Revoked</span>
                   </div>
