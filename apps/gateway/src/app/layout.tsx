@@ -21,7 +21,7 @@ const ptMono = PT_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DataToRAG — Connect Your Data to AI",
+  title: "DataToRAG | Connect Your Data to AI",
   description:
     "Link your data sources and let your AI assistant access everything. No engineering required.",
 };

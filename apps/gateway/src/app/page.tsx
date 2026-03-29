@@ -56,7 +56,7 @@ export default async function HomePage() {
             >
               DataToRAG connects your internal data to AI assistants like Claude
               through the Model Context Protocol. Self-serve platform or
-              white-glove integration — we bridge the gap.
+              white-glove integration. We bridge the gap.
             </p>
             <div
               className="animate-fade-in-up mt-8 flex flex-wrap items-center gap-3"
@@ -90,7 +90,7 @@ export default async function HomePage() {
               </h2>
               <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">
                 Whether you want to plug in yourself, use a pre-built connector,
-                or need a custom integration — DataToRAG has you covered.
+                or need a custom integration, DataToRAG has you covered.
               </p>
             </div>
 
@@ -163,7 +163,7 @@ export default async function HomePage() {
                 Not every data source has a pre-built connector. Our engineering
                 team works directly with your infrastructure to build custom MCP
                 servers that give your AI assistants access to proprietary
-                systems — databases, internal APIs, ERP platforms, data
+                systems: databases, internal APIs, ERP platforms, data
                 warehouses, and more.
               </p>
               <a
@@ -189,7 +189,7 @@ export default async function HomePage() {
                 },
                 {
                   label: "Deploy",
-                  desc: "Managed infrastructure or on-prem — hosted alongside your data.",
+                  desc: "Managed infrastructure or on-prem, hosted alongside your data.",
                 },
                 {
                   label: "Support",
@@ -307,7 +307,7 @@ export default async function HomePage() {
                 One line to connect.
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                Add the DataToRAG gateway to any MCP-compatible client — Claude
+                Add the DataToRAG gateway to any MCP-compatible client: Claude
                 Desktop, Cursor, Windsurf, or your own application. OAuth
                 sign-in handles the rest.
               </p>

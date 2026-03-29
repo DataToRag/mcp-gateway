@@ -8,7 +8,7 @@ export default function ApiKeysPage() {
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Create and manage API keys for programmatic access. Keys are an
-        alternative to OAuth — use them in scripts and CI pipelines.
+        alternative to OAuth. Use them in scripts and CI pipelines.
       </p>
 
       <ApiKeysClient />

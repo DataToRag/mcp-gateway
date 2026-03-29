@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props) {
   if (!data) return { title: "Not Found" };
 
   return {
-    title: `${data.server.name} — DataToRAG`,
+    title: `${data.server.name} | DataToRAG`,
     description: data.server.description ?? `Data source with ${data.tools.length} capabilities`,
   };
 }
@@ -148,7 +148,7 @@ export default async function ToolDetailPage({ params }: Props) {
                               )}
                               {prop.description && (
                                 <span className="text-xs text-muted-foreground">
-                                  — {prop.description}
+                                  / {prop.description}
                                 </span>
                               )}
                             </div>

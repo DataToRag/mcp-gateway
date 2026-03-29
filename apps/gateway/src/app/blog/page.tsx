@@ -5,11 +5,11 @@ import { getAllPosts } from "@/lib/blog";
 import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
-  title: "Blog — DataToRAG",
+  title: "Blog | DataToRAG",
   description:
     "Insights on connecting enterprise data to AI assistants through the Model Context Protocol.",
   openGraph: {
-    title: "Blog — DataToRAG",
+    title: "Blog | DataToRAG",
     description:
       "Insights on connecting enterprise data to AI assistants through the Model Context Protocol.",
     type: "website",
