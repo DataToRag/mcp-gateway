@@ -1,8 +1,12 @@
+"use client";
+
 import Image from "next/image";
 
 export default function LoginPage() {
-  const baseUrl =
-    process.env.GATEWAY_BASE_URL ?? "http://localhost:8285";
+  function handleLogin() {
+    const redirectUri = window.location.origin + "/oauth/callback";
+    window.location.href = `/oauth/authorize?response_type=code&client_id=web&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge=placeholder&code_challenge_method=S256`;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -25,8 +29,8 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8">
-            <a
-              href={`/oauth/authorize?response_type=code&client_id=web&redirect_uri=${encodeURIComponent(baseUrl + "/oauth/callback")}&code_challenge=placeholder&code_challenge_method=S256`}
+            <button
+              onClick={handleLogin}
               className="flex w-full items-center justify-center gap-3 rounded-[var(--radius)] border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-all hover:bg-secondary"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -48,7 +52,7 @@ export default function LoginPage() {
                 />
               </svg>
               Continue with Google
-            </a>
+            </button>
           </div>
         </div>
 
