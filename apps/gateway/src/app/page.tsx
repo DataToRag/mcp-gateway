@@ -2,7 +2,6 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { mcpServers, tools } from "@datatorag-mcp/db";
 import { Navbar } from "@/components/navbar";
-import { HeroGradient } from "@/components/hero-gradient";
 import { ToolCard } from "@/components/tool-card";
 import Link from "next/link";
 
@@ -36,52 +35,45 @@ export default async function HomePage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0">
-            <HeroGradient />
-          </div>
-          <div className="absolute inset-0 bg-black/30" />
-
-          <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
-            <div className="max-w-2xl">
-              <p
-                className="animate-fade-in-up text-sm font-semibold uppercase tracking-widest text-white/80"
+        <section className="mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
+          <div className="max-w-2xl">
+            <p
+              className="animate-fade-in-up text-sm font-semibold uppercase tracking-widest text-primary"
+            >
+              MCP Gateway + Integration Services
+            </p>
+            <h1
+              className="animate-fade-in-up mt-4 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem]"
+              style={{ animationDelay: "0.06s" }}
+            >
+              Get your data
+              <br />
+              <span className="text-primary">AI-ready.</span>
+            </h1>
+            <p
+              className="animate-fade-in-up mt-6 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg"
+              style={{ animationDelay: "0.12s" }}
+            >
+              DataToRAG connects your internal data to AI assistants like Claude
+              through the Model Context Protocol. Self-serve platform or
+              white-glove integration. We bridge the gap.
+            </p>
+            <div
+              className="animate-fade-in-up mt-8 flex flex-wrap items-center gap-3"
+              style={{ animationDelay: "0.18s" }}
+            >
+              <Link
+                href="/auth/login"
+                className="rounded-[var(--radius)] bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90"
               >
-                MCP Gateway + Integration Services
-              </p>
-              <h1
-                className="animate-fade-in-up mt-4 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]"
-                style={{ animationDelay: "0.06s" }}
+                Start Free
+              </Link>
+              <a
+                href="#services"
+                className="rounded-[var(--radius)] border border-border px-6 py-3 text-sm font-medium text-secondary-foreground transition-all hover:bg-secondary"
               >
-                Get your data
-                <br />
-                <span className="text-blue-200">AI-ready.</span>
-              </h1>
-              <p
-                className="animate-fade-in-up mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg"
-                style={{ animationDelay: "0.12s" }}
-              >
-                DataToRAG connects your internal data to AI assistants like Claude
-                through the Model Context Protocol. Self-serve platform or
-                white-glove integration. We bridge the gap.
-              </p>
-              <div
-                className="animate-fade-in-up mt-8 flex flex-wrap items-center gap-3"
-                style={{ animationDelay: "0.18s" }}
-              >
-                <Link
-                  href="/auth/login"
-                  className="rounded-[var(--radius)] bg-white px-6 py-3 text-sm font-medium text-[#1a3a8f] transition-all hover:bg-white/90"
-                >
-                  Start Free
-                </Link>
-                <a
-                  href="#services"
-                  className="rounded-[var(--radius)] border border-white/30 px-6 py-3 text-sm font-medium text-white transition-all hover:border-white/50 hover:bg-white/10"
-                >
-                  Talk to Us
-                </a>
-              </div>
+                Talk to Us
+              </a>
             </div>
           </div>
         </section>
