@@ -1,8 +1,13 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
-import { oauthClients, oauthAuthorizationCodes, users } from "@datatorag-mcp/db";
+import {
+  oauthClients,
+  oauthAuthorizationCodes,
+  oauthAccessTokens,
+  users,
+} from "@datatorag-mcp/db";
 
 /**
  * OAuth2 Authorization Endpoint
@@ -105,22 +110,17 @@ export function createAuthorizeRouter(
     googleAuthUrl.searchParams.set("state", oauthState);
     googleAuthUrl.searchParams.set("prompt", "select_account");
 
-    console.log("[oauth/authorize] redirecting to Google, state length:", oauthState.length);
-    console.log("[oauth/authorize] redirect_uri to Google:", `${config.baseUrl}/oauth/callback`);
     res.redirect(googleAuthUrl.toString());
   });
 
   // Google OAuth callback — exchange Google code, find/create user, issue auth code
   router.get("/oauth/callback", async (req, res) => {
-    console.log("[oauth/callback] query:", JSON.stringify(req.query));
-    console.log("[oauth/callback] full url:", req.originalUrl);
     const { code: googleCode, state: oauthState } = req.query as Record<
       string,
       string
     >;
 
     if (!googleCode || !oauthState) {
-      console.log("[oauth/callback] missing params — code:", !!googleCode, "state:", !!oauthState);
       res.status(400).send("Missing code or state from Google");
       return;
     }
@@ -205,7 +205,32 @@ export function createAuthorizeRouter(
         .returning();
     }
 
-    // Generate authorization code
+    // First-party dashboard: issue session cookie directly, skip auth code
+    if (params.client_id === "web") {
+      const token = randomBytes(32).toString("base64url");
+      const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+      await db.insert(oauthAccessTokens).values({
+        token,
+        clientId: "web",
+        userId: user.id,
+        scope: params.scope ?? null,
+        expiresAt: tokenExpiresAt,
+      });
+
+      res.cookie("dtrmcp_session", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        expires: tokenExpiresAt,
+      });
+
+      res.redirect("/dashboard");
+      return;
+    }
+
+    // Third-party MCP clients: issue authorization code
     const authCode = randomBytes(32).toString("base64url");
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
