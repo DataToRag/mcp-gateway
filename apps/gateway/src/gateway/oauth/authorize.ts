@@ -50,19 +50,25 @@ export function createAuthorizeRouter(
       return;
     }
 
-    // Verify client exists and redirect_uri is registered
-    const [client] = await db
-      .select()
-      .from(oauthClients)
-      .where(eq(oauthClients.clientId, client_id))
-      .limit(1);
-
-    if (!client) {
-      res.status(400).json({
-        error: "invalid_client",
-        error_description: "Unknown client_id",
-      });
-      return;
+    // First-party dashboard client -- always allowed, no DB registration needed
+    let client: { redirectUris: string[] };
+    if (client_id === "web") {
+      client = { redirectUris: [`${config.baseUrl}/oauth/callback`] };
+    } else {
+      // Third-party MCP clients -- require DB registration
+      const [dbClient] = await db
+        .select()
+        .from(oauthClients)
+        .where(eq(oauthClients.clientId, client_id))
+        .limit(1);
+      if (!dbClient) {
+        res.status(400).json({
+          error: "invalid_client",
+          error_description: "Unknown client_id",
+        });
+        return;
+      }
+      client = dbClient;
     }
 
     const registeredUris = client.redirectUris as string[];

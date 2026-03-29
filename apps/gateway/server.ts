@@ -5,7 +5,7 @@ import { eq, and, gt, isNull, or } from "drizzle-orm";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./src/gateway/mcp-server.js";
 import { ConnectionPool } from "./src/gateway/pool.js";
-import { createDb, oauthAccessTokens, oauthClients } from "@datatorag-mcp/db";
+import { createDb, oauthAccessTokens } from "@datatorag-mcp/db";
 import { ApiKeyValidator } from "@datatorag-mcp/auth";
 import { getEnv } from "@datatorag-mcp/config";
 import { createMetadataRouter } from "./src/gateway/oauth/metadata.js";
@@ -23,25 +23,6 @@ async function main() {
 
   const env = getEnv();
   const db = createDb(env.DATABASE_URL);
-
-  // Seed the dashboard web client if it doesn't already exist
-  const [existingWeb] = await db
-    .select()
-    .from(oauthClients)
-    .where(eq(oauthClients.clientId, "web"))
-    .limit(1);
-  if (!existingWeb) {
-    await db.insert(oauthClients).values({
-      clientId: "web",
-      redirectUris: [`${env.GATEWAY_BASE_URL}/oauth/callback`],
-      clientName: "DataToRAG Dashboard",
-      grantTypes: ["authorization_code"],
-      responseTypes: ["code"],
-      tokenEndpointAuthMethod: "none",
-    });
-    console.log("Seeded web OAuth client");
-  }
-
   const pool = new ConnectionPool();
   const apiKeyValidator = new ApiKeyValidator(db);
   const baseUrl = env.GATEWAY_BASE_URL;
