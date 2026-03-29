@@ -2,18 +2,13 @@ import { randomBytes } from "node:crypto";
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
-import {
-  oauthClients,
-  oauthAuthorizationCodes,
-  oauthAccessTokens,
-  users,
-} from "@datatorag-mcp/db";
+import { oauthClients, oauthAuthorizationCodes, users } from "@datatorag-mcp/db";
 
 /**
- * OAuth2 Authorization Endpoint
+ * OAuth2 Authorization Endpoint (MCP clients only)
  *
- * GET /oauth/authorize — shows login page
- * GET /oauth/callback — Google OAuth callback, issues auth code
+ * GET /oauth/authorize — validate client, redirect to Google
+ * GET /oauth/callback — Google callback, issue auth code to MCP client
  */
 export function createAuthorizeRouter(
   db: Database,
@@ -25,7 +20,6 @@ export function createAuthorizeRouter(
 ): Router {
   const router = Router();
 
-  // Authorization endpoint — renders login page or redirects to Google
   router.get("/oauth/authorize", async (req, res) => {
     const {
       client_id,
@@ -37,7 +31,6 @@ export function createAuthorizeRouter(
       scope,
     } = req.query as Record<string, string>;
 
-    // Validate required params
     if (response_type !== "code") {
       res.status(400).json({
         error: "unsupported_response_type",
@@ -55,25 +48,19 @@ export function createAuthorizeRouter(
       return;
     }
 
-    // First-party dashboard client -- always allowed, no DB registration needed
-    let client: { redirectUris: string[] };
-    if (client_id === "web") {
-      client = { redirectUris: [`${config.baseUrl}/oauth/callback`] };
-    } else {
-      // Third-party MCP clients -- require DB registration
-      const [dbClient] = await db
-        .select()
-        .from(oauthClients)
-        .where(eq(oauthClients.clientId, client_id))
-        .limit(1);
-      if (!dbClient) {
-        res.status(400).json({
-          error: "invalid_client",
-          error_description: "Unknown client_id",
-        });
-        return;
-      }
-      client = dbClient;
+    // Look up registered MCP client
+    const [client] = await db
+      .select()
+      .from(oauthClients)
+      .where(eq(oauthClients.clientId, client_id))
+      .limit(1);
+
+    if (!client) {
+      res.status(400).json({
+        error: "invalid_client",
+        error_description: "Unknown client_id",
+      });
+      return;
     }
 
     const registeredUris = client.redirectUris as string[];
@@ -85,7 +72,7 @@ export function createAuthorizeRouter(
       return;
     }
 
-    // Store OAuth params in a temporary state and redirect to Google
+    // Store OAuth params in state and redirect to Google
     const oauthState = Buffer.from(
       JSON.stringify({
         client_id,
@@ -113,7 +100,7 @@ export function createAuthorizeRouter(
     res.redirect(googleAuthUrl.toString());
   });
 
-  // Google OAuth callback — exchange Google code, find/create user, issue auth code
+  // Google OAuth callback for MCP clients
   router.get("/oauth/callback", async (req, res) => {
     const { code: googleCode, state: oauthState } = req.query as Record<
       string,
@@ -125,7 +112,6 @@ export function createAuthorizeRouter(
       return;
     }
 
-    // Decode the OAuth params we stored in state
     let params: {
       client_id: string;
       redirect_uri: string;
@@ -167,7 +153,6 @@ export function createAuthorizeRouter(
       access_token: string;
     };
 
-    // Fetch user info from Google
     const userInfoResponse = await fetch(
       "https://www.googleapis.com/oauth2/v2/userinfo",
       {
@@ -205,32 +190,7 @@ export function createAuthorizeRouter(
         .returning();
     }
 
-    // First-party dashboard: issue session cookie directly, skip auth code
-    if (params.client_id === "web") {
-      const token = randomBytes(32).toString("base64url");
-      const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
-
-      await db.insert(oauthAccessTokens).values({
-        token,
-        clientId: "web",
-        userId: user.id,
-        scope: params.scope ?? null,
-        expiresAt: tokenExpiresAt,
-      });
-
-      res.cookie("dtrmcp_session", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        expires: tokenExpiresAt,
-      });
-
-      res.redirect("/dashboard");
-      return;
-    }
-
-    // Third-party MCP clients: issue authorization code
+    // Issue authorization code to the MCP client
     const authCode = randomBytes(32).toString("base64url");
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -245,7 +205,6 @@ export function createAuthorizeRouter(
       expiresAt,
     });
 
-    // Redirect back to the MCP client with the auth code
     const redirectUrl = new URL(params.redirect_uri);
     redirectUrl.searchParams.set("code", authCode);
     if (params.state) {

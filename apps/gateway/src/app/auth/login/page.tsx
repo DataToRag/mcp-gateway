@@ -1,13 +1,6 @@
-"use client";
-
 import Image from "next/image";
 
 export default function LoginPage() {
-  function handleLogin() {
-    const redirectUri = window.location.origin + "/oauth/callback";
-    window.location.href = `/oauth/authorize?response_type=code&client_id=web&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge=placeholder&code_challenge_method=S256`;
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="animate-fade-in-up w-full max-w-sm">
@@ -29,8 +22,8 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8">
-            <button
-              onClick={handleLogin}
+            <a
+              href="/auth/google"
               className="flex w-full items-center justify-center gap-3 rounded-[var(--radius)] border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-all hover:bg-secondary"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -52,7 +45,7 @@ export default function LoginPage() {
                 />
               </svg>
               Continue with Google
-            </button>
+            </a>
           </div>
         </div>
 

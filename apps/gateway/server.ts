@@ -12,6 +12,7 @@ import { createMetadataRouter } from "./src/gateway/oauth/metadata.js";
 import { createRegisterRouter } from "./src/gateway/oauth/register.js";
 import { createAuthorizeRouter } from "./src/gateway/oauth/authorize.js";
 import { createTokenRouter } from "./src/gateway/oauth/token.js";
+import { createAuthRouter } from "./src/gateway/auth.js";
 import { getPluginManager } from "./src/lib/plugin-manager.js";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -48,7 +49,16 @@ async function main() {
   app.use("/oauth", express.json(), express.urlencoded({ extended: true }));
   app.use("/mcp", express.json());
 
-  // OAuth2 authorization server routes
+  // Dashboard auth (Google login -> session cookie)
+  app.use(
+    createAuthRouter(db, {
+      googleClientId: env.GOOGLE_CLIENT_ID,
+      googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+      baseUrl,
+    })
+  );
+
+  // OAuth2 authorization server routes (MCP clients only)
   app.use(createMetadataRouter(baseUrl));
   app.use(createRegisterRouter(db));
   app.use(
