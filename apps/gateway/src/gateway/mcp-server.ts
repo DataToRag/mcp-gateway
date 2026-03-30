@@ -5,11 +5,113 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { eq, and } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
-import { tools, mcpServers, pluginConnections } from "@datatorag-mcp/db";
+import {
+  tools,
+  mcpServers,
+  pluginConnections,
+  serviceConnections,
+} from "@datatorag-mcp/db";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { ConnectionPool } from "./pool.js";
 import { NAMESPACE_SEPARATOR } from "./plugin-manager.js";
+
+/** Mapping from plugin slug to the service connection it needs. */
+const PLUGIN_SERVICE_MAP: Record<string, string> = {
+  "gws-mcp": "google-workspace",
+};
+
+/**
+ * Refresh a Google access token using the stored refresh token.
+ * Returns the new access token, or null if refresh fails.
+ */
+async function refreshGoogleToken(
+  db: Database,
+  connectionId: string,
+  refreshToken: string
+): Promise<string | null> {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return null;
+
+  try {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as {
+      access_token: string;
+      expires_in?: number;
+    };
+
+    const expiresAt = data.expires_in
+      ? new Date(Date.now() + data.expires_in * 1000)
+      : null;
+
+    await db
+      .update(serviceConnections)
+      .set({
+        accessToken: data.access_token,
+        tokenExpiresAt: expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(serviceConnections.id, connectionId));
+
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get a valid access token for a user's service connection.
+ * Refreshes if expired and refresh token is available.
+ */
+async function getServiceToken(
+  db: Database,
+  userId: string,
+  service: string
+): Promise<string | null> {
+  const [conn] = await db
+    .select()
+    .from(serviceConnections)
+    .where(
+      and(
+        eq(serviceConnections.userId, userId),
+        eq(serviceConnections.service, service)
+      )
+    )
+    .limit(1);
+
+  if (!conn) return null;
+
+  // Check if token is expired
+  const isExpired =
+    conn.tokenExpiresAt && conn.tokenExpiresAt.getTime() < Date.now();
+
+  if (!isExpired) return conn.accessToken;
+
+  // Try to refresh
+  if (conn.refreshToken) {
+    const newToken = await refreshGoogleToken(
+      db,
+      conn.id,
+      conn.refreshToken
+    );
+    if (newToken) return newToken;
+  }
+
+  return null;
+}
 
 /**
  * Creates a new MCP Server instance for a client session.
@@ -116,12 +218,10 @@ export function createMcpServer(
       };
     }
 
-    // Build URL: local plugin (has githubRepoUrl) uses localhost,
-    // Docker container uses the container hostname on the shared network.
+    // Build URL
     let serverUrl: string;
     const dockerHostOverride = process.env.DOCKER_HOST_OVERRIDE;
     if (mcpServer.githubRepoUrl) {
-      // Local plugin process
       serverUrl = `http://localhost:${mcpServer.containerPort}/mcp`;
     } else if (dockerHostOverride) {
       serverUrl = `http://${dockerHostOverride}/mcp`;
@@ -129,9 +229,25 @@ export function createMcpServer(
       serverUrl = `http://dtrmcp-server-${mcpServer.slug}:${mcpServer.containerPort}/mcp`;
     }
 
-    // Look up per-user token for this plugin
+    // Look up per-user token: first check service connections, then legacy plugin connections
     let userToken: string | null = null;
-    if (mcpServer.githubRepoUrl) {
+
+    const requiredService = PLUGIN_SERVICE_MAP[mcpServer.slug];
+    if (requiredService) {
+      userToken = await getServiceToken(db, userId, requiredService);
+      if (!userToken) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Google Workspace is not connected. Please connect it from the dashboard at /dashboard/connections before using ${serverSlug} tools.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    } else if (mcpServer.githubRepoUrl) {
+      // Legacy: check pluginConnections table
       const [conn] = await db
         .select({ accessToken: pluginConnections.accessToken })
         .from(pluginConnections)
@@ -154,7 +270,7 @@ export function createMcpServer(
     try {
       let result;
       if (userToken) {
-        // One-shot client with user token header — avoids per-user pool complexity
+        // One-shot client with user token header
         const transport = new StreamableHTTPClientTransport(
           new URL(serverUrl),
           { requestInit: { headers: { "X-User-Token": userToken } } }

@@ -34,7 +34,7 @@ export default async function HomePage() {
     <>
       <Navbar />
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-hidden">
         {/* Hero */}
         <ShaderBackground>
           <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">

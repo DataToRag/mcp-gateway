@@ -36,7 +36,7 @@ export default function RootLayout({
       lang="en"
       className={`${montserrat.variable} ${inter.variable} ${ptMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans overflow-x-hidden">{children}</body>
     </html>
   );
 }

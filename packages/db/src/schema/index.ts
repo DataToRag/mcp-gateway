@@ -10,3 +10,4 @@ export {
 } from "./oauth";
 export { mcpServerEnvVars } from "./mcp-server-env-vars";
 export { pluginConnections } from "./plugin-connections";
+export { serviceConnections } from "./service-connections";

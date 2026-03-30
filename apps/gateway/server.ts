@@ -1,5 +1,6 @@
 import next from "next";
 import express from "express";
+import cookieParser from "cookie-parser";
 import { randomUUID } from "node:crypto";
 import { eq, and, gt, isNull, or } from "drizzle-orm";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -42,6 +43,8 @@ async function main() {
   process.on("SIGINT", shutdown);
 
   const app = express();
+
+  app.use(cookieParser());
 
   // Body parsing scoped to gateway API routes only.
   // Next.js API routes (e.g. /api/keys) need the raw stream, so we must NOT
