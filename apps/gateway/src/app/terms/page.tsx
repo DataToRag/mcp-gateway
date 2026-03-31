@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/navbar";
 import type { Metadata } from "next";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Terms of Service | DataToRAG",
   description: "DataToRAG terms of service.",
