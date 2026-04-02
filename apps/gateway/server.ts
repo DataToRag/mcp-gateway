@@ -54,6 +54,8 @@ async function main() {
       googleClientSecret: env.GOOGLE_CLIENT_SECRET,
       gwsClientId: env.GOOGLE_GWS_CLIENT_ID,
       gwsClientSecret: env.GOOGLE_GWS_CLIENT_SECRET,
+      atlassianClientId: env.ATLASSIAN_CLIENT_ID,
+      atlassianClientSecret: env.ATLASSIAN_CLIENT_SECRET,
       baseUrl,
     })
   );

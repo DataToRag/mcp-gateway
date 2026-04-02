@@ -34,6 +34,8 @@ export function createAuthRouter(
     googleClientSecret: string;
     gwsClientId: string;
     gwsClientSecret: string;
+    atlassianClientId: string;
+    atlassianClientSecret: string;
     baseUrl: string;
   }
 ): Router {
@@ -277,6 +279,137 @@ export function createAuthRouter(
     }
 
     res.redirect("/dashboard/connections?connected=google-workspace");
+  });
+
+  // --- Atlassian connection (Jira + Confluence) ---
+
+  const ATLASSIAN_SCOPES = [
+    "read:jira-work",
+    "write:jira-work",
+    "read:jira-user",
+    "read:confluence-content.all",
+    "write:confluence-content",
+    "read:confluence-space.summary",
+    "write:confluence-file",
+    "search:confluence",
+    "readonly:content.attachment:confluence",
+    "read:me",
+    "offline_access",
+  ].join(" ");
+
+  router.get("/auth/atlassian/connect", (req, res) => {
+    const sessionToken = req.cookies?.dtrmcp_session;
+    if (!sessionToken) {
+      res.redirect("/auth/login");
+      return;
+    }
+
+    const url = new URL("https://auth.atlassian.com/authorize");
+    url.searchParams.set("audience", "api.atlassian.com");
+    url.searchParams.set("client_id", config.atlassianClientId);
+    url.searchParams.set(
+      "redirect_uri",
+      `${config.baseUrl}/auth/atlassian/connect/callback`
+    );
+    url.searchParams.set("scope", ATLASSIAN_SCOPES);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("prompt", "consent");
+    url.searchParams.set("state", sessionToken);
+
+    res.redirect(url.toString());
+  });
+
+  router.get("/auth/atlassian/connect/callback", async (req, res) => {
+    const code = req.query.code as string | undefined;
+    const state = req.query.state as string | undefined;
+    const sessionToken = state ?? req.cookies?.dtrmcp_session;
+
+    if (!sessionToken) {
+      res.redirect("/auth/login");
+      return;
+    }
+
+    if (!code) {
+      res.redirect("/dashboard/connections?error=missing_code");
+      return;
+    }
+
+    const [session] = await db
+      .select({ userId: oauthAccessTokens.userId })
+      .from(oauthAccessTokens)
+      .where(eq(oauthAccessTokens.token, sessionToken))
+      .limit(1);
+
+    if (!session) {
+      res.redirect("/auth/login");
+      return;
+    }
+
+    const tokenResponse = await fetch(
+      "https://auth.atlassian.com/oauth/token",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grant_type: "authorization_code",
+          client_id: config.atlassianClientId,
+          client_secret: config.atlassianClientSecret,
+          code,
+          redirect_uri: `${config.baseUrl}/auth/atlassian/connect/callback`,
+        }),
+      }
+    );
+
+    if (!tokenResponse.ok) {
+      res.redirect("/dashboard/connections?error=token_exchange_failed");
+      return;
+    }
+
+    const tokens = (await tokenResponse.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+      scope?: string;
+    };
+
+    const expiresAt = tokens.expires_in
+      ? new Date(Date.now() + tokens.expires_in * 1000)
+      : null;
+
+    const existing = await db
+      .select({ id: serviceConnections.id })
+      .from(serviceConnections)
+      .where(
+        and(
+          eq(serviceConnections.userId, session.userId),
+          eq(serviceConnections.service, "atlassian")
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(serviceConnections)
+        .set({
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token ?? null,
+          scopes: tokens.scope ?? ATLASSIAN_SCOPES,
+          tokenExpiresAt: expiresAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(serviceConnections.id, existing[0].id));
+    } else {
+      await db.insert(serviceConnections).values({
+        userId: session.userId,
+        service: "atlassian",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token ?? null,
+        scopes: tokens.scope ?? ATLASSIAN_SCOPES,
+        tokenExpiresAt: expiresAt,
+      });
+    }
+
+    res.redirect("/dashboard/connections?connected=atlassian");
   });
 
   return router;

@@ -34,6 +34,24 @@ export const SERVICES: ServiceConfig[] = [
       </svg>
     ),
   },
+  {
+    id: "atlassian",
+    name: "Atlassian",
+    description: "Jira and Confluence — issues, pages, comments, and search",
+    connectUrl: "/auth/atlassian/connect",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-8 w-8">
+        <path
+          d="M7.12 11.08c-.15-.2-.37-.2-.49.02L2.05 20.86c-.12.22-.01.4.24.4h5.96c.12 0 .28-.1.34-.24.82-1.82.46-4.58-1.47-9.94z"
+          fill="#2684FF"
+        />
+        <path
+          d="M11.35 2.31c-2.45 4.36-2.57 8.14-.72 12.27l2.56 5.28c.12.24.32.24.44.24h5.96c.24 0 .36-.18.24-.4L12.04 2.33c-.12-.2-.37-.24-.49-.08l-.2.06z"
+          fill="#2684FF"
+        />
+      </svg>
+    ),
+  },
 ];
 
 export function getService(id: string): ServiceConfig | undefined {

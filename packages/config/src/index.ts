@@ -13,6 +13,9 @@ const envSchema = z.object({
   // Google OAuth — GWS connection (Workspace scopes)
   GOOGLE_GWS_CLIENT_ID: z.string().default(""),
   GOOGLE_GWS_CLIENT_SECRET: z.string().default(""),
+  // Atlassian OAuth — Jira + Confluence
+  ATLASSIAN_CLIENT_ID: z.string().default(""),
+  ATLASSIAN_CLIENT_SECRET: z.string().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;
