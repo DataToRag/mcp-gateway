@@ -143,6 +143,20 @@ export function createAuthRouter(
     res.redirect("/dashboard");
   });
 
+  // --- Logout ---
+
+  router.post("/auth/logout", async (req, res) => {
+    const sessionToken = req.cookies?.dtrmcp_session;
+    if (sessionToken) {
+      await db
+        .update(oauthAccessTokens)
+        .set({ revokedAt: new Date() })
+        .where(eq(oauthAccessTokens.token, sessionToken));
+    }
+    res.clearCookie("dtrmcp_session", { path: "/" });
+    res.redirect("/");
+  });
+
   // --- Google Workspace connection (full scopes) ---
 
   router.get("/auth/google/connect", (req, res) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -9,12 +9,94 @@ const navItems = [
   { href: "/dashboard/connections", label: "Connections" },
 ];
 
+interface User {
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+}
+
+function UserMenu({ user }: { user: User }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const initials = (user.name ?? user.email)
+    .split(/[\s@]/)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("");
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      >
+        {user.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt=""
+            className="h-6 w-6 rounded-full"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+            {initials}
+          </span>
+        )}
+        <span className="max-w-[120px] truncate text-xs">
+          {user.name ?? user.email}
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 mb-1 w-52 rounded-lg border border-border bg-background py-1 shadow-lg">
+          <div className="border-b border-border px-3 py-2">
+            <p className="truncate text-sm font-medium text-foreground">
+              {user.name}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {user.email}
+            </p>
+          </div>
+          <form action="/auth/logout" method="POST">
+            <button
+              type="submit"
+              className="w-full px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user) setUser(data.user);
+      });
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -31,34 +113,37 @@ export default function DashboardLayout({
             DataToRAG
           </span>
         </div>
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
-          aria-label="Toggle menu"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
+        <div className="flex items-center gap-2">
+          {user && <UserMenu user={user} />}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
+            aria-label="Toggle menu"
           >
-            {menuOpen ? (
-              <>
-                <path d="M5 5l10 10" />
-                <path d="M15 5L5 15" />
-              </>
-            ) : (
-              <>
-                <path d="M3 6h14" />
-                <path d="M3 10h14" />
-                <path d="M3 14h14" />
-              </>
-            )}
-          </svg>
-        </button>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              {menuOpen ? (
+                <>
+                  <path d="M5 5l10 10" />
+                  <path d="M15 5L5 15" />
+                </>
+              ) : (
+                <>
+                  <path d="M3 6h14" />
+                  <path d="M3 10h14" />
+                  <path d="M3 14h14" />
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Mobile nav dropdown */}
@@ -87,7 +172,7 @@ export default function DashboardLayout({
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-56 shrink-0 border-r border-border md:block">
+      <aside className="hidden w-56 shrink-0 flex-col border-r border-border md:flex">
         <div className="flex h-16 items-center gap-3 border-b border-border px-5">
           <Image
             src="/datatorag-logo-256.png"
@@ -112,13 +197,8 @@ export default function DashboardLayout({
           ))}
         </nav>
 
-        <div className="mt-auto border-t border-border px-3 py-4">
-          <Link
-            href="/"
-            className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            Back to Home
-          </Link>
+        <div className="mt-auto border-t border-border px-3 py-3">
+          {user && <UserMenu user={user} />}
         </div>
       </aside>
 
