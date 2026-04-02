@@ -32,6 +32,8 @@ export function createAuthRouter(
   config: {
     googleClientId: string;
     googleClientSecret: string;
+    gwsClientId: string;
+    gwsClientSecret: string;
     baseUrl: string;
   }
 ): Router {
@@ -170,7 +172,7 @@ export function createAuthRouter(
     const googleAuthUrl = new URL(
       "https://accounts.google.com/o/oauth2/v2/auth"
     );
-    googleAuthUrl.searchParams.set("client_id", config.googleClientId);
+    googleAuthUrl.searchParams.set("client_id", config.gwsClientId);
     googleAuthUrl.searchParams.set(
       "redirect_uri",
       `${config.baseUrl}/auth/google/connect/callback`
@@ -216,8 +218,8 @@ export function createAuthRouter(
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           code: googleCode,
-          client_id: config.googleClientId,
-          client_secret: config.googleClientSecret,
+          client_id: config.gwsClientId,
+          client_secret: config.gwsClientSecret,
           redirect_uri: `${config.baseUrl}/auth/google/connect/callback`,
           grant_type: "authorization_code",
         }),

@@ -42,6 +42,8 @@ services:
       GATEWAY_BASE_URL: http://localhost:8285
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_GWS_CLIENT_ID: ${GOOGLE_GWS_CLIENT_ID:-}
+      GOOGLE_GWS_CLIENT_SECRET: ${GOOGLE_GWS_CLIENT_SECRET:-}
       NODE_ENV: development
     depends_on:
       db-init:

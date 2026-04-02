@@ -52,6 +52,8 @@ async function main() {
     createAuthRouter(db, {
       googleClientId: env.GOOGLE_CLIENT_ID,
       googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+      gwsClientId: env.GOOGLE_GWS_CLIENT_ID,
+      gwsClientSecret: env.GOOGLE_GWS_CLIENT_SECRET,
       baseUrl,
     })
   );

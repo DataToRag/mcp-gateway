@@ -21,8 +21,8 @@ export async function refreshGoogleToken(
   connectionId: string,
   refreshToken: string
 ): Promise<string | null> {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientId = process.env.GOOGLE_GWS_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_GWS_CLIENT_SECRET;
   if (!clientId || !clientSecret) return null;
 
   try {
