@@ -9,7 +9,6 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@datatorag-mcp/auth": "workspace:*",
     "@datatorag-mcp/config": "workspace:*",
     "@datatorag-mcp/db": "workspace:*",
     "@datatorag-mcp/types": "workspace:*",

@@ -7,7 +7,6 @@ import Image from "next/image";
 const navItems = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/connections", label: "Connections" },
-  { href: "/dashboard/keys", label: "API Keys" },
 ];
 
 export default function DashboardLayout({

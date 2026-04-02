@@ -32,7 +32,7 @@ export default async function DashboardPage() {
         Your MCP integrations at a glance.
       </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-border p-6">
           <p className="text-sm text-muted-foreground">MCP Sources</p>
           <p className="mt-1 font-display text-3xl font-bold text-foreground">
@@ -44,13 +44,6 @@ export default async function DashboardPage() {
           <p className="mt-1 font-display text-3xl font-bold text-foreground">
             {stats.tools}
           </p>
-        </div>
-        <div className="rounded-2xl border border-border p-6">
-          <p className="text-sm text-muted-foreground">Credits</p>
-          <p className="mt-1 font-display text-3xl font-bold text-foreground">
-            100
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Free tier</p>
         </div>
       </div>
 

@@ -7,7 +7,6 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { createMcpServer } from "./src/gateway/mcp-server.js";
 import { ConnectionPool } from "./src/gateway/pool.js";
 import { createDb, oauthAccessTokens } from "@datatorag-mcp/db";
-import { ApiKeyValidator } from "@datatorag-mcp/auth";
 import { getEnv } from "@datatorag-mcp/config";
 import { createMetadataRouter } from "./src/gateway/oauth/metadata.js";
 import { createRegisterRouter } from "./src/gateway/oauth/register.js";
@@ -26,7 +25,6 @@ async function main() {
   const env = getEnv();
   const db = createDb(env.DATABASE_URL);
   const pool = new ConnectionPool();
-  const apiKeyValidator = new ApiKeyValidator(db);
   const baseUrl = env.GATEWAY_BASE_URL;
 
   // Initialize plugin manager and start all active plugins
@@ -46,9 +44,6 @@ async function main() {
 
   app.use(cookieParser());
 
-  // Body parsing scoped to gateway API routes only.
-  // Next.js API routes (e.g. /api/keys) need the raw stream, so we must NOT
-  // apply express.json() globally.
   app.use("/oauth", express.json(), express.urlencoded({ extended: true }));
   app.use("/mcp", express.json());
 
@@ -86,23 +81,10 @@ async function main() {
     res.json({ status: "ok" });
   });
 
-  /**
-   * Validate a Bearer token — checks API keys first, then OAuth tokens.
-   * Returns userId if valid, null if not.
-   */
+  /** Validate a Bearer token (OAuth access token). Returns userId if valid. */
   async function validateBearer(
     rawToken: string
   ): Promise<{ userId: string } | null> {
-    // Try API key first (sk-dtrmcp_ prefix)
-    if (rawToken.startsWith("sk-dtrmcp_")) {
-      const result = await apiKeyValidator.validate(rawToken);
-      if (result.valid && result.userId) {
-        return { userId: result.userId };
-      }
-      return null;
-    }
-
-    // Try OAuth access token
     const [token] = await db
       .select({ userId: oauthAccessTokens.userId })
       .from(oauthAccessTokens)

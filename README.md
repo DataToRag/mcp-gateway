@@ -1,6 +1,6 @@
 # DataToRAG MCP
 
-An open-source MCP gateway and marketplace. Connect any MCP client with a single API key to access a marketplace of open-source MCP tools.
+An open-source MCP gateway. Connect any MCP client to access Google Workspace and other MCP tools through a single endpoint.
 
 ## Architecture
 
@@ -11,12 +11,12 @@ An open-source MCP gateway and marketplace. Connect any MCP client with a single
             │   Cursor, etc.   │
             └────────┬─────────┘
                      │
-           POST /mcp │  Bearer sk-dtrmcp_...
+           POST /mcp │  Bearer <OAuth token>
                      │
                      ▼
             ┌──────────────────┐
-            │    1. Auth       │── SHA-256 hash
-            │                  │   LRU cache
+            │    1. Auth       │── OAuth2 token
+            │                  │   validation
             └────────┬─────────┘   401 if invalid
                      │
                      ▼
@@ -30,19 +30,19 @@ An open-source MCP gateway and marketplace. Connect any MCP client with a single
             │  3. tools/list   │───>│ PostgreSQL │
             │     tools/call   │    │            │
             └────────┬─────────┘    │ users      │
-                     │              │ api_keys   │
-                     ▼              │ credits    │
-            ┌──────────────────┐    │ logs       │
+                     │              │ tools      │
+                     ▼              │ servers    │
+            ┌──────────────────┐    │            │
             │  4. Route by     │<──>│            │
             │     namespace    │    └────────────┘
-            └────────┬─────────┘  check credits
-                     │            log + deduct
+            └────────┬─────────┘
+                     │
         ┌────────────┼────────────┐
         ▼            ▼            ▼
  ┌────────────┐ ┌──────────┐ ┌──────────┐
- │weather-api │ │ github-  │ │ server-n │
- │  (Docker)  │ │ tools    │ │   ...    │
- │ :3000/mcp  │ │ (Docker) │ │ (Docker) │
+ │  gws-mcp   │ │ plugin-2 │ │ plugin-n │
+ │  (Node.js) │ │   ...    │ │   ...    │
+ │ :40000/mcp │ │          │ │          │
  └────────────┘ └──────────┘ └──────────┘
 ```
 
@@ -55,16 +55,15 @@ An open-source MCP gateway and marketplace. Connect any MCP client with a single
 ### Quick Start
 
 ```bash
-# Start everything — postgres, gateway, web, sample MCP server
+# Start everything — postgres, gateway
 docker compose -f docker/docker-compose.dev.yml up -d
 ```
 
-That's it. The db-init container automatically pushes the schema and seeds a test user + API key.
+That's it. The db-init container automatically pushes the schema and seeds a test user.
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **Web** | http://localhost:4200 | Marketplace frontend |
-| **Gateway** | http://localhost:4100 | MCP proxy endpoint |
+| **Gateway** | http://localhost:4100 | MCP proxy + dashboard |
 | **Gateway health** | http://localhost:4100/health | Health check |
 | **OAuth metadata** | http://localhost:4100/.well-known/oauth-authorization-server | OAuth2 discovery |
 
@@ -75,29 +74,14 @@ Add this to your MCP client config (Claude Desktop, Cursor, etc.):
 ```json
 {
   "mcpServers": {
-    "datatorag-mcp": {
+    "datatorag": {
       "url": "http://localhost:4100/mcp"
     }
   }
 }
 ```
 
-Your browser will open automatically for sign-in via OAuth. No API key needed.
-
-For programmatic access, create an API key at http://localhost:4200/dashboard/keys and use:
-
-```json
-{
-  "mcpServers": {
-    "datatorag-mcp": {
-      "url": "http://localhost:4100/mcp",
-      "headers": {
-        "Authorization": "Bearer sk-dtrmcp_YOUR_KEY_HERE"
-      }
-    }
-  }
-}
-```
+Your browser will open automatically for sign-in via OAuth.
 
 ### Environment Variables
 
@@ -125,31 +109,23 @@ DATABASE_URL=postgresql://datatoragmcp:localdev@localhost:54320/datatoragmcp \
   pnpm --filter @datatorag-mcp/db db:push && \
   pnpm --filter @datatorag-mcp/db db:seed
 
-# Start gateway (terminal 1)
+# Start gateway
 DATABASE_URL=postgresql://datatoragmcp:localdev@localhost:54320/datatoragmcp \
   pnpm --filter @datatorag-mcp/gateway dev
-
-# Start web (terminal 2)
-DATABASE_URL=postgresql://datatoragmcp:localdev@localhost:54320/datatoragmcp \
-  pnpm --filter web dev
 ```
 
 ## Project Structure
 
 ```
 apps/
-  gateway/            # MCP proxy server (Express + MCP SDK)
-  web/                # Next.js marketplace frontend
+  gateway/            # MCP proxy server (Express + MCP SDK) + dashboard
 packages/
-  auth/               # API key generation & validation
   config/             # Environment variable parsing
   db/                 # Drizzle ORM schema & database client
-  docker-manager/     # Docker container lifecycle management
   types/              # Shared TypeScript types
-samples/
-  math-tools/         # Sample MCP server for testing
 docker/
   docker-compose.dev.yml   # Full local dev stack
+  docker-compose.prod.yml  # Production (Lightsail)
 ```
 
 ## License

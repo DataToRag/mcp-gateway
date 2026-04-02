@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-export const ApiKeyPrefix = "sk-dtrmcp_";
-
 export const mcpServerStatusSchema = z.enum([
   "pending",
   "building",
@@ -19,12 +17,6 @@ export const creditTransactionTypeSchema = z.enum([
   "adjustment",
 ]);
 export type CreditTransactionType = z.infer<typeof creditTransactionTypeSchema>;
-
-export interface ApiKeyValidationResult {
-  valid: boolean;
-  userId?: string;
-  apiKeyId?: string;
-}
 
 export interface McpGatewayManifest {
   name: string;
