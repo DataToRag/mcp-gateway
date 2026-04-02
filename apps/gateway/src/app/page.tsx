@@ -367,7 +367,12 @@ export default async function HomePage() {
       </main>
 
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        DataToRAG &middot; MCP Gateway &amp; Integration Services
+        <p>DataToRAG &middot; MCP Gateway &amp; Integration Services</p>
+        <p className="mt-2">
+          <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>
+          {" "}&middot;{" "}
+          <a href="/terms" className="underline hover:text-foreground">Terms of Service</a>
+        </p>
       </footer>
     </>
   );
