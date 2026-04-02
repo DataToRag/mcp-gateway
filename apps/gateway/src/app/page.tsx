@@ -77,6 +77,29 @@ export default async function HomePage() {
                   Talk to Us
                 </a>
               </div>
+
+              {/* Demo video */}
+              <div
+                className="animate-fade-in-up mt-10"
+                style={{ animationDelay: "0.24s" }}
+              >
+                <div
+                  id="demo-video"
+                  className="aspect-video w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm"
+                >
+                  {/* Replace with YouTube embed: <iframe src="..." className="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> */}
+                  <div className="flex h-full items-center justify-center">
+                    <div className="text-center">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/10">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+                          <path d="M6.5 3.5v13l11-6.5z" />
+                        </svg>
+                      </div>
+                      <p className="mt-3 text-sm text-white/50">Demo video coming soon</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </ShaderBackground>
@@ -282,8 +305,6 @@ export default async function HomePage() {
                   "HubSpot",
                   "PostgreSQL",
                   "Snowflake",
-                  "Jira",
-                  "Confluence",
                   "Notion",
                   "GitHub",
                 ].map((name) => (
