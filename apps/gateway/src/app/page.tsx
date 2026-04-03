@@ -37,55 +37,60 @@ export default async function HomePage() {
       <main className="flex-1 overflow-x-hidden">
         {/* Hero */}
         <ShaderBackground>
-          <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
-            <div className="max-w-2xl">
-              <p
-                className="animate-fade-in-up text-sm font-semibold uppercase tracking-widest text-white/80"
-              >
-                MCP Gateway + Integration Services
-              </p>
-              <h1
-                className="animate-fade-in-up mt-4 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]"
-                style={{ animationDelay: "0.06s" }}
-              >
-                Get your data
-                <br />
-                <span className="text-blue-200">AI-ready.</span>
-              </h1>
-              <p
-                className="animate-fade-in-up mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg"
-                style={{ animationDelay: "0.12s" }}
-              >
-                DataToRAG connects your internal data to AI assistants like Claude
-                through the Model Context Protocol. Self-serve platform or
-                white-glove integration. We bridge the gap.
-              </p>
-              <div
-                className="animate-fade-in-up mt-8 flex flex-wrap items-center gap-3"
-                style={{ animationDelay: "0.18s" }}
-              >
-                <Link
-                  href="/auth/login"
-                  className="rounded-[var(--radius)] bg-white px-6 py-3 text-sm font-medium text-[#1a3a8f] transition-all hover:bg-white/90"
+          <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center px-6 py-20">
+            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+              {/* Left: copy */}
+              <div className="text-center lg:text-left">
+                <div
+                  className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 backdrop-blur-sm"
                 >
-                  Start Free
-                </Link>
-                <a
-                  href="#services"
-                  className="rounded-[var(--radius)] border border-white/30 px-6 py-3 text-sm font-medium text-white transition-all hover:border-white/50 hover:bg-white/10"
+                  <span className="text-xs font-medium text-white/90">
+                    MCP Gateway + Integration Services
+                  </span>
+                </div>
+                <h1
+                  className="animate-fade-in-up mt-6 font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
+                  style={{ animationDelay: "0.06s" }}
                 >
-                  Talk to Us
-                </a>
+                  Get your data
+                  <br />
+                  <span className="text-blue-200">AI-ready.</span>
+                </h1>
+                <p
+                  className="animate-fade-in-up mx-auto mt-6 max-w-lg text-base leading-relaxed text-white/60 sm:text-lg lg:mx-0"
+                  style={{ animationDelay: "0.12s" }}
+                >
+                  DataToRAG connects your internal data to AI assistants like Claude
+                  through the Model Context Protocol. Self-serve platform or
+                  white-glove integration. We bridge the gap.
+                </p>
+                <div
+                  className="animate-fade-in-up mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start"
+                  style={{ animationDelay: "0.18s" }}
+                >
+                  <Link
+                    href="/auth/login"
+                    className="rounded-full bg-white px-7 py-3 text-sm font-medium text-[#1a3a8f] transition-all hover:bg-white/90"
+                  >
+                    Get Started
+                  </Link>
+                  <a
+                    href="#services"
+                    className="rounded-full border border-white/30 px-7 py-3 text-sm font-medium text-white transition-all hover:border-white/50 hover:bg-white/10"
+                  >
+                    Talk to Us
+                  </a>
+                </div>
               </div>
 
-              {/* Demo video */}
+              {/* Right: demo video */}
               <div
-                className="animate-fade-in-up mt-10"
+                className="animate-fade-in-up"
                 style={{ animationDelay: "0.24s" }}
               >
                 <div
                   id="demo-video"
-                  className="aspect-video w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm"
+                  className="aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm"
                 >
                   {/* Replace with YouTube embed: <iframe src="..." className="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> */}
                   <div className="flex h-full items-center justify-center">
