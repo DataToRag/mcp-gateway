@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { Navbar } from "@/components/navbar";
+import { ZoomableImage } from "@/components/zoomable-image";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -164,7 +165,7 @@ export default async function BlogArticlePage({ params }: Props) {
 
           {post.coverImage && (
             <div className="mt-8 overflow-hidden rounded-2xl border border-border">
-              <Image
+              <ZoomableImage
                 src={post.coverImage}
                 alt={post.title}
                 width={1200}
