@@ -1,88 +1,63 @@
 ---
-title: "Connect Google Workspace to Claude: How Teams Are Saving Hours Every Week"
-excerpt: "Your AI assistant is powerful but blind to your actual work. MCP changes that. Here's what happens when Claude can read your email, search your Drive, and check your calendar."
+title: "Save Gmail Attachments to Drive with Claude"
+excerpt: "A team was running an Apps Script to save 6 daily report emails to Drive. We replaced it with one prompt."
 date: "2026-03-28"
 author: "Manuel Yang"
-category: "Integration"
+category: "Product"
 ---
 
-I watched a product manager spend 20 minutes last week copying numbers from a Google Sheet into a Slack message, then cross-referencing those numbers with a Google Doc, then checking her calendar to figure out when the next review meeting was. She had Claude open in another tab the entire time.
+Someone on our early access list had a workflow that looked like this: a colleague scheduled 6 Domo reports to arrive by email at 4am every weekday. Each email had a CSV attachment. An Apps Script would save those attachments to a specific Google Drive folder. Then a Claude skill would pick up the 6 CSVs, aggregate them into one Google Sheet, and write a summary. Another sheet pulled the summary via `IMPORTRANGE`.
 
-Claude couldn't help. Not because it wasn't capable, but because it couldn't see any of her data.
+It worked. But the Apps Script was a separate piece of infrastructure to maintain, debug when the email format changed, and explain to the next person who inherited the workflow.
 
-That's the gap we built DataToRAG to close.
+We built `gmail_save_attachment_to_drive` so Claude can handle the entire chain.
 
-## The Problem Nobody Talks About
+## How it works
 
-Everyone's excited about AI assistants. And they should be. Claude is genuinely good at reasoning, writing, and analysis. But here's the thing most AI vendors skip over: your assistant can't access your work.
+The tool does exactly what the name says. You give it a message ID, an attachment ID, a filename, and optionally a Drive folder ID. It pulls the attachment from Gmail, uploads it to Drive, and returns the file metadata including a direct link.
 
-Your emails sit in Gmail. Your reports are in Drive. Your calendar, your docs, your spreadsheets. All locked inside Google Workspace with no bridge to the AI tools your team is already paying for.
+The actual data never touches the conversation. The attachment is decoded and uploaded server-side. A 50MB Excel file doesn't eat your context window. You get back a file ID and a link.
 
-So people do what they've always done. They copy-paste. They download CSVs. They manually summarize email threads and type them into a chat window. It's 2026 and we're still playing human middleware between our tools.
+## The workflow, step by step
 
-A McKinsey study from 2023 found knowledge workers spend about 28% of their day just searching for information. I think the actual number is higher now, because we've added AI tools to the mix without connecting them to anything.
+Here's what it looks like in practice, using the Domo report scenario.
 
-## MCP: The Short Version
+**Step 1: Find the emails.** "Search my Gmail for emails from daniel@company.com with attachments from today." Claude calls `gmail_search` with `from:daniel@company.com has:attachment newer_than:1d`. You get back 6 message IDs.
 
-MCP, the Model Context Protocol, is an open standard that lets AI assistants talk to external tools directly. Think of it like USB for AI: a standard plug that connects Claude (or Cursor, or any MCP client) to the systems where your data actually lives.
+**Step 2: Read the attachments.** For each message, Claude calls `gmail_read` to get the full message. The response includes a `parts` array with attachment metadata: filename, MIME type, and an `attachmentId`. No binary data at this point, just metadata.
 
-The key thing: your data doesn't get uploaded anywhere. Claude reaches out through authenticated APIs, pulls what it needs for a specific request, and works with it in the conversation. Same permission boundaries your IT team already set up. Nothing changes about your Google Workspace admin controls.
+**Step 3: Save to Drive.** Claude calls `gmail_save_attachment_to_drive` for each attachment. If you want them in a specific folder, you mention it once ("save them to the Domo Reports folder") and Claude calls `drive_search` to find the folder ID, then passes it as `parent_folder_id` on each save.
 
-It's not theoretical. It ships today.
+**Step 4: Process the data.** Now the CSVs are in Drive. Claude reads them with `drive_read_file`, aggregates the data, writes the summary to a Google Sheet with `sheets_update`. Done.
 
-## What This Actually Looks Like
+One prompt triggers the whole thing. No Apps Script. No cron job. No separate infrastructure.
 
-I want to skip the abstract value propositions and show you real scenarios. These are things our team does daily.
+## Why not just download and re-upload?
 
-**Morning email triage.** Instead of spending 40 minutes reading through your inbox, you ask Claude: "What's urgent in my unread email? Draft replies for anything that needs a response today." It reads your actual Gmail threads, understands the context of ongoing conversations, and writes replies that sound like you. Our product lead cut her morning email time from 45 minutes to about 10.
+Before this tool existed, the workaround was: read the email, ask Claude to extract the attachment data, then create a new file in Drive. The problem is that attachment data is base64-encoded, and sending it through the conversation means it lands in your context window.
 
-**Finding buried documents.** "Find the Q4 revenue deck in the finance folder and pull the top-line numbers into a new spreadsheet." Claude searches Drive, opens the right file, reads the content, and creates a formatted Sheet. No more clicking through nested folders trying to remember what someone named a file three months ago.
+A 5MB CSV encoded in base64 is about 6.7MB of text. That's roughly 1.7 million characters, or about 500K tokens. Your context window is gone after one attachment.
 
-**Scheduling across calendars.** Getting four people on a call shouldn't require a 12-message Slack thread. Claude checks everyone's Google Calendar, finds open slots, and creates the event with the right attendees and a meet link. Thirty seconds instead of 30 minutes of back-and-forth.
+`gmail_save_attachment_to_drive` bypasses this entirely. The server fetches the attachment, decodes it in memory, uploads to Drive, and cleans up the temp file. The only thing that flows through the conversation is metadata: file IDs, names, and links.
 
-**Meeting notes to project docs.** After a call, you paste rough notes and say "turn this into a project brief in Google Docs." Claude creates the doc, fills in details by pulling from relevant email threads and existing documents, and shares it with the team. We use this constantly for internal planning.
+## Folder targeting
 
-**Task management.** "Add 'review Q1 marketing deck' to my Engineering task list, due Friday." Done. Want a status check? "What's on my task list this week?" Claude pulls it from Google Tasks. Small thing, but it means you never have to context-switch to a separate tasks app.
+Most people don't want files dumped in the root of My Drive. The `parent_folder_id` parameter lets you specify exactly where files go.
 
-**Cross-tool workflows.** This is where it gets interesting. "Summarize the last five emails from the product team, find the docs they referenced, and write a briefing I can send to the exec team." One prompt that would've been 20 minutes of tab-switching.
+In practice, you don't need to know folder IDs. Just say "save it to the Q2 Reports folder" and Claude will search Drive for a folder with that name, get the ID, and pass it through. If the folder doesn't exist, Claude can create it with `drive_create_folder` first.
 
-## Why This Matters (Beyond Saving Time)
+## What this replaces
 
-The time savings are real. Most teams report getting back 5-8 hours per week per person. But there are two things that matter more.
+The Domo example is one case. Here are others we've seen:
 
-First: fewer context switches. Every time someone tabs from Gmail to Drive to Sheets to Calendar and back, they lose focus. Cal Newport's research on deep work isn't wrong. The cognitive cost of switching is higher than the clock time suggests. When Claude handles the tool-hopping, your team stays in one conversation.
+**Invoice processing.** "Go through my unread emails from vendors, save any PDF attachments to the Invoices folder, and list what you saved." Accounts payable runs this once a day instead of manually downloading and uploading each invoice.
 
-Second: your data stays put. There's no bulk export. No syncing to a third-party database. No uploading sensitive files to an AI platform. Claude accesses data through the same Google APIs your team already uses, with the same OAuth permissions. Your security posture doesn't change. This matters when you're a 200-person company with an IT team that (rightfully) asks hard questions about data handling.
+**Contract collection.** "Find all emails from legal@partner.com in the last 30 days, save any Word or PDF attachments to the Partner Contracts folder." Legal review prep that used to take an hour of clicking.
 
-## What We Built
+**Daily data drops.** The original use case. Scheduled reports arrive by email, get saved to Drive, get processed into dashboards. The entire pipeline runs on a single prompt.
 
-DataToRAG's Google Workspace connector gives Claude access to 45 tools across eight services:
+## Try it
 
-- **Gmail**: search, read, send, reply, draft, label management
-- **Drive**: search, read, create, share files and folders
-- **Calendar**: view, create, update events across calendars
-- **Docs**: create, read, edit documents
-- **Sheets**: read, write, manage spreadsheet data
-- **Slides**: create and modify presentations
-- **Contacts**: search and manage your directory
-- **Tasks**: create, update, complete, organize task lists
+The `gmail_save_attachment_to_drive` tool is live now in the [Google Workspace MCP](https://datatorag.com). Connect your account and try: "Find my most recent email with an attachment and save it to Drive."
 
-We run it as a managed MCP server. Your team doesn't deploy anything, doesn't maintain a server, doesn't write any code. You connect through OAuth (same flow you use to sign into any Google app) and every tool is available immediately.
-
-Any MCP client works: Claude Desktop, Cursor, Windsurf, or your own applications.
-
-## Getting Started
-
-Three steps, about two minutes:
-
-1. Sign up at [datatorag.com](https://datatorag.com) and connect your Google account
-2. Add one line to your MCP client config
-3. Start asking Claude about your data
-
-If your company has data sources beyond Google Workspace (internal databases, CRM systems, proprietary APIs), we build custom MCP integrations for those too. Same managed infrastructure, built for your specific stack.
-
----
-
-The gap between what AI can do and what it can do *with your data* has been the bottleneck for a year now. MCP closes it. For the millions of teams running on Google Workspace, the connector is ready.
-
-[Start free](https://datatorag.com/auth/login) or [reach out](mailto:support@datatorag.com) if you want to talk about connecting your company's data.
+If you're running scheduled reports through email like the team above, you can replace the Apps Script today. One less thing to maintain.
