@@ -24,7 +24,12 @@ export async function POST(request: NextRequest) {
     arguments?: Record<string, unknown>;
   };
 
-  const { tool: namespacedName, arguments: args = {} } = body;
+  const { tool: namespacedName, arguments: rawArgs = {} } = body;
+
+  // Extract and strip the optional `account` param
+  const args = { ...rawArgs };
+  const accountEmail = args.account as string | undefined;
+  delete args.account;
   if (!namespacedName) {
     return NextResponse.json(
       { error: "Missing tool parameter" },
@@ -69,7 +74,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const userToken = await getServiceToken(db, userId, requiredService);
+  const userToken = await getServiceToken(db, userId, requiredService, accountEmail);
   if (!userToken) {
     return NextResponse.json(
       {

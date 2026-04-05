@@ -5,10 +5,13 @@ import type { Database } from "@datatorag-mcp/db";
 import {
   oauthAccessTokens,
   serviceConnections,
+  connectedAccounts,
   users,
 } from "@datatorag-mcp/db";
 
 const GWS_SCOPES = [
+  "openid",
+  "email",
   "https://www.googleapis.com/auth/gmail.modify",
   "https://www.googleapis.com/auth/drive",
   "https://www.googleapis.com/auth/calendar",
@@ -182,7 +185,7 @@ export function createAuthRouter(
     googleAuthUrl.searchParams.set("response_type", "code");
     googleAuthUrl.searchParams.set("scope", GWS_SCOPES);
     googleAuthUrl.searchParams.set("access_type", "offline");
-    googleAuthUrl.searchParams.set("prompt", "consent");
+    googleAuthUrl.searchParams.set("prompt", "consent select_account");
 
     res.redirect(googleAuthUrl.toString());
   });
@@ -244,19 +247,46 @@ export function createAuthRouter(
       ? new Date(Date.now() + tokens.expires_in * 1000)
       : null;
 
-    // Upsert the connection
-    const existing = await db
-      .select({ id: serviceConnections.id })
-      .from(serviceConnections)
+    // Fetch the email of the connected Google account
+    let accountEmail: string | null = null;
+    try {
+      const userInfoRes = await fetch(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+      );
+      if (userInfoRes.ok) {
+        const userInfo = (await userInfoRes.json()) as { email: string };
+        accountEmail = userInfo.email;
+      }
+    } catch {
+      // Fall through — accountEmail stays null
+    }
+
+    if (!accountEmail) {
+      res.redirect(
+        "/dashboard/connections?error=could_not_resolve_account_email"
+      );
+      return;
+    }
+
+    // Check if a connected_accounts row already exists for this email (re-auth)
+    const [existingAccount] = await db
+      .select({
+        id: connectedAccounts.id,
+        serviceConnectionId: connectedAccounts.serviceConnectionId,
+      })
+      .from(connectedAccounts)
       .where(
         and(
-          eq(serviceConnections.userId, session.userId),
-          eq(serviceConnections.service, "google-workspace")
+          eq(connectedAccounts.userId, session.userId),
+          eq(connectedAccounts.connectorType, "google-workspace"),
+          eq(connectedAccounts.accountEmail, accountEmail)
         )
       )
       .limit(1);
 
-    if (existing.length > 0) {
+    if (existingAccount) {
+      // Re-auth: update existing service_connections row
       await db
         .update(serviceConnections)
         .set({
@@ -266,15 +296,38 @@ export function createAuthRouter(
           tokenExpiresAt: expiresAt,
           updatedAt: new Date(),
         })
-        .where(eq(serviceConnections.id, existing[0].id));
+        .where(eq(serviceConnections.id, existingAccount.serviceConnectionId));
     } else {
-      await db.insert(serviceConnections).values({
+      // New account: insert service_connections + connected_accounts
+      const [newConn] = await db
+        .insert(serviceConnections)
+        .values({
+          userId: session.userId,
+          service: "google-workspace",
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token ?? null,
+          scopes: tokens.scope ?? GWS_SCOPES,
+          tokenExpiresAt: expiresAt,
+        })
+        .returning({ id: serviceConnections.id });
+
+      // Check if this is the first account for this connector
+      const existingCount = await db
+        .select({ id: connectedAccounts.id })
+        .from(connectedAccounts)
+        .where(
+          and(
+            eq(connectedAccounts.userId, session.userId),
+            eq(connectedAccounts.connectorType, "google-workspace")
+          )
+        );
+
+      await db.insert(connectedAccounts).values({
         userId: session.userId,
-        service: "google-workspace",
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? null,
-        scopes: tokens.scope ?? GWS_SCOPES,
-        tokenExpiresAt: expiresAt,
+        connectorType: "google-workspace",
+        accountEmail,
+        serviceConnectionId: newConn.id,
+        isDefault: existingCount.length === 0,
       });
     }
 
@@ -376,18 +429,45 @@ export function createAuthRouter(
       ? new Date(Date.now() + tokens.expires_in * 1000)
       : null;
 
-    const existing = await db
-      .select({ id: serviceConnections.id })
-      .from(serviceConnections)
+    // Fetch the email of the connected Atlassian account
+    let accountEmail: string | null = null;
+    try {
+      const meRes = await fetch("https://api.atlassian.com/me", {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      if (meRes.ok) {
+        const me = (await meRes.json()) as { email: string };
+        accountEmail = me.email;
+      }
+    } catch {
+      // Fall through — accountEmail stays null
+    }
+
+    if (!accountEmail) {
+      res.redirect(
+        "/dashboard/connections?error=could_not_resolve_account_email"
+      );
+      return;
+    }
+
+    // Check if a connected_accounts row already exists for this email (re-auth)
+    const [existingAccount] = await db
+      .select({
+        id: connectedAccounts.id,
+        serviceConnectionId: connectedAccounts.serviceConnectionId,
+      })
+      .from(connectedAccounts)
       .where(
         and(
-          eq(serviceConnections.userId, session.userId),
-          eq(serviceConnections.service, "atlassian")
+          eq(connectedAccounts.userId, session.userId),
+          eq(connectedAccounts.connectorType, "atlassian"),
+          eq(connectedAccounts.accountEmail, accountEmail)
         )
       )
       .limit(1);
 
-    if (existing.length > 0) {
+    if (existingAccount) {
+      // Re-auth: update existing service_connections row
       await db
         .update(serviceConnections)
         .set({
@@ -397,15 +477,37 @@ export function createAuthRouter(
           tokenExpiresAt: expiresAt,
           updatedAt: new Date(),
         })
-        .where(eq(serviceConnections.id, existing[0].id));
+        .where(eq(serviceConnections.id, existingAccount.serviceConnectionId));
     } else {
-      await db.insert(serviceConnections).values({
+      // New account: insert service_connections + connected_accounts
+      const [newConn] = await db
+        .insert(serviceConnections)
+        .values({
+          userId: session.userId,
+          service: "atlassian",
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token ?? null,
+          scopes: tokens.scope ?? ATLASSIAN_SCOPES,
+          tokenExpiresAt: expiresAt,
+        })
+        .returning({ id: serviceConnections.id });
+
+      const existingCount = await db
+        .select({ id: connectedAccounts.id })
+        .from(connectedAccounts)
+        .where(
+          and(
+            eq(connectedAccounts.userId, session.userId),
+            eq(connectedAccounts.connectorType, "atlassian")
+          )
+        );
+
+      await db.insert(connectedAccounts).values({
         userId: session.userId,
-        service: "atlassian",
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? null,
-        scopes: tokens.scope ?? ATLASSIAN_SCOPES,
-        tokenExpiresAt: expiresAt,
+        connectorType: "atlassian",
+        accountEmail,
+        serviceConnectionId: newConn.id,
+        isDefault: existingCount.length === 0,
       });
     }
 

@@ -3,7 +3,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-interface Connection {
+interface ConnectedAccount {
+  id: string;
+  connectorType: string;
+  label: string | null;
+  accountEmail: string;
+  isDefault: boolean;
+  createdAt: string;
+  scopes: string | null;
+  connectedAt: string;
+}
+
+interface LegacyConnection {
   id: string;
   service: string;
   scopes: string | null;
@@ -42,7 +53,9 @@ export function ConnectionDetailClient({
   connectUrl: string;
 }) {
   const router = useRouter();
-  const [connection, setConnection] = useState<Connection | null>(null);
+  const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
+  const [legacyConnection, setLegacyConnection] =
+    useState<LegacyConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [tools, setTools] = useState<Tool[]>([]);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
@@ -50,17 +63,23 @@ export function ConnectionDetailClient({
   const [result, setResult] = useState<ToolResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [calling, setCalling] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [toolSearch, setToolSearch] = useState("");
 
   const fetchConnection = useCallback(async () => {
     const res = await fetch("/api/connections");
     if (res.ok) {
       const data = await res.json();
-      const conn = data.connections.find(
-        (c: Connection) => c.service === service
+      const accts = (data.accounts ?? []).filter(
+        (a: ConnectedAccount) => a.connectorType === service
       );
-      setConnection(conn ?? null);
+      setAccounts(accts);
+      if (accts.length === 0) {
+        const conn = (data.connections ?? []).find(
+          (c: LegacyConnection) => c.service === service
+        );
+        setLegacyConnection(conn ?? null);
+      }
     }
     setLoading(false);
   }, [service]);
@@ -78,10 +97,33 @@ export function ConnectionDetailClient({
     fetchTools();
   }, [fetchConnection, fetchTools]);
 
-  async function disconnect() {
-    setDisconnecting(true);
+  async function disconnectAccount(accountId: string) {
+    setDisconnecting(accountId);
+    await fetch(`/api/connections?accountId=${accountId}`, {
+      method: "DELETE",
+    });
+    setAccounts((prev) => prev.filter((a) => a.id !== accountId));
+    setDisconnecting(null);
+    if (accounts.length <= 1) {
+      router.push("/dashboard/connections");
+    }
+  }
+
+  async function disconnectLegacy() {
+    setDisconnecting("legacy");
     await fetch(`/api/connections?service=${service}`, { method: "DELETE" });
     router.push("/dashboard/connections");
+  }
+
+  async function setDefault(accountId: string) {
+    await fetch("/api/connections", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accountId, setDefault: true }),
+    });
+    setAccounts((prev) =>
+      prev.map((a) => ({ ...a, isDefault: a.id === accountId }))
+    );
   }
 
   function selectTool(tool: Tool) {
@@ -151,8 +193,10 @@ export function ConnectionDetailClient({
     );
   }
 
+  const isConnected = accounts.length > 0 || !!legacyConnection;
+
   // Not connected state
-  if (!connection) {
+  if (!isConnected) {
     return (
       <div className="mt-8 rounded-2xl border border-border p-6 text-center">
         <p className="text-sm text-muted-foreground">
@@ -178,28 +222,99 @@ export function ConnectionDetailClient({
 
   return (
     <div className="mt-6 space-y-6">
-      {/* Connection info */}
-      <div className="flex items-center justify-between rounded-2xl border border-border p-4">
-        <div className="text-sm text-muted-foreground">
-          Connected{" "}
-          {new Date(connection.connectedAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-          {connection.scopes && (
-            <span className="ml-3 text-xs">
-              {connection.scopes.split(" ").length} scopes
-            </span>
-          )}
+      {/* Connected accounts */}
+      <div className="space-y-2 rounded-2xl border border-border p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-foreground">
+            Connected accounts
+          </h3>
+          <a
+            href={connectUrl}
+            className="rounded-[var(--radius)] border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            Add account
+          </a>
         </div>
-        <button
-          onClick={disconnect}
-          disabled={disconnecting}
-          className="rounded-[var(--radius)] border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
-        >
-          {disconnecting ? "Disconnecting..." : "Disconnect"}
-        </button>
+
+        {accounts.map((account) => (
+          <div
+            key={account.id}
+            className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-secondary/50"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                {account.accountEmail[0].toUpperCase()}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {account.accountEmail}
+                  </span>
+                  {account.isDefault && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      Default
+                    </span>
+                  )}
+                  {account.label && (
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {account.label}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Connected{" "}
+                  {new Date(account.connectedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                  {account.scopes && (
+                    <span className="ml-2">
+                      {account.scopes.split(" ").length} scopes
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {!account.isDefault && accounts.length > 1 && (
+                <button
+                  onClick={() => setDefault(account.id)}
+                  className="rounded-[var(--radius)] border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  Set default
+                </button>
+              )}
+              <button
+                onClick={() => disconnectAccount(account.id)}
+                disabled={disconnecting === account.id}
+                className="rounded-[var(--radius)] border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+              >
+                {disconnecting === account.id ? "..." : "Disconnect"}
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* Legacy connection fallback */}
+        {accounts.length === 0 && legacyConnection && (
+          <div className="flex items-center justify-between px-3 py-2.5">
+            <p className="text-xs text-muted-foreground">
+              Connected{" "}
+              {new Date(legacyConnection.connectedAt).toLocaleDateString(
+                "en-US",
+                { month: "short", day: "numeric", year: "numeric" }
+              )}
+            </p>
+            <button
+              onClick={disconnectLegacy}
+              disabled={disconnecting === "legacy"}
+              className="rounded-[var(--radius)] border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+            >
+              {disconnecting === "legacy" ? "..." : "Disconnect"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tools section */}

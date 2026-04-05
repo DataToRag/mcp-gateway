@@ -37,19 +37,41 @@ export function createMcpServer(
         namespacedName: tools.namespacedName,
         description: tools.description,
         inputSchemaJson: tools.inputSchemaJson,
+        serverSlug: mcpServers.slug,
       })
       .from(tools)
       .innerJoin(mcpServers, eq(tools.mcpServerId, mcpServers.id))
       .where(eq(mcpServers.status, "active"));
 
-    const toolList = registeredTools.map((t) => ({
-      name: t.namespacedName,
-      description: t.description ?? "",
-      inputSchema: (t.inputSchemaJson as Record<string, unknown>) ?? {
+    const toolList = registeredTools.map((t) => {
+      const schema = (t.inputSchemaJson as Record<string, unknown>) ?? {
         type: "object" as const,
         properties: {},
-      },
-    }));
+      };
+
+      // Inject optional `account` param for tools that use service connections
+      if (PLUGIN_SERVICE_MAP[t.serverSlug]) {
+        const properties = {
+          ...(schema.properties as Record<string, unknown>),
+          account: {
+            type: "string",
+            description:
+              "Optional email address of the connected account to use (e.g. 'user@gmail.com'). If omitted, the default account is used.",
+          },
+        };
+        return {
+          name: t.namespacedName,
+          description: t.description ?? "",
+          inputSchema: { ...schema, properties },
+        };
+      }
+
+      return {
+        name: t.namespacedName,
+        description: t.description ?? "",
+        inputSchema: schema,
+      };
+    });
 
     toolList.push({
       name: "echo",
@@ -71,10 +93,10 @@ export function createMcpServer(
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
+    const { name, arguments: rawArgs } = request.params;
 
     if (name === "echo") {
-      const message = (args as Record<string, unknown>)?.message;
+      const message = (rawArgs as Record<string, unknown>)?.message;
       return {
         content: [
           {
@@ -84,6 +106,11 @@ export function createMcpServer(
         ],
       };
     }
+
+    // Extract and strip the optional `account` param before forwarding to plugin
+    const args = { ...(rawArgs as Record<string, unknown>) };
+    const accountEmail = args.account as string | undefined;
+    delete args.account;
 
     const separatorIndex = name.indexOf(NAMESPACE_SEPARATOR);
     if (separatorIndex === -1) {
@@ -137,15 +164,18 @@ export function createMcpServer(
 
     const requiredService = PLUGIN_SERVICE_MAP[mcpServer.slug];
     if (requiredService) {
-      userToken = await getServiceToken(db, userId, requiredService);
+      userToken = await getServiceToken(
+        db,
+        userId,
+        requiredService,
+        accountEmail
+      );
       if (!userToken) {
+        const msg = accountEmail
+          ? `No connected account found for ${accountEmail}. Please connect it from the dashboard at /dashboard/connections.`
+          : `${requiredService} is not connected. Please connect it from the dashboard at /dashboard/connections before using ${serverSlug} tools.`;
         return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Google Workspace is not connected. Please connect it from the dashboard at /dashboard/connections before using ${serverSlug} tools.`,
-            },
-          ],
+          content: [{ type: "text" as const, text: msg }],
           isError: true,
         };
       }

@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
-import { serviceConnections } from "@datatorag-mcp/db";
+import { serviceConnections, connectedAccounts } from "@datatorag-mcp/db";
 
 /** Mapping from plugin slug to the service connection it needs. */
 export const PLUGIN_SERVICE_MAP: Record<string, string> = {
@@ -129,23 +129,56 @@ const REFRESH_FN: Record<
 
 /**
  * Get a valid access token for a user's service connection.
+ * Routes through connected_accounts when available, with fallback to direct lookup.
  * Refreshes if expired and refresh token is available.
  */
 export async function getServiceToken(
   db: Database,
   userId: string,
-  service: string
+  service: string,
+  accountEmail?: string
 ): Promise<string | null> {
-  const [conn] = await db
-    .select()
-    .from(serviceConnections)
-    .where(
-      and(
-        eq(serviceConnections.userId, userId),
-        eq(serviceConnections.service, service)
-      )
-    )
+  // Route through connected_accounts
+  const conditions = [
+    eq(connectedAccounts.userId, userId),
+    eq(connectedAccounts.connectorType, service),
+  ];
+
+  if (accountEmail) {
+    conditions.push(eq(connectedAccounts.accountEmail, accountEmail));
+  } else {
+    conditions.push(eq(connectedAccounts.isDefault, true));
+  }
+
+  const [account] = await db
+    .select({
+      serviceConnectionId: connectedAccounts.serviceConnectionId,
+    })
+    .from(connectedAccounts)
+    .where(and(...conditions))
     .limit(1);
+
+  let conn;
+
+  if (account) {
+    [conn] = await db
+      .select()
+      .from(serviceConnections)
+      .where(eq(serviceConnections.id, account.serviceConnectionId))
+      .limit(1);
+  } else if (!accountEmail) {
+    // Fallback: direct service_connections lookup (backward compat for un-migrated rows)
+    [conn] = await db
+      .select()
+      .from(serviceConnections)
+      .where(
+        and(
+          eq(serviceConnections.userId, userId),
+          eq(serviceConnections.service, service)
+        )
+      )
+      .limit(1);
+  }
 
   if (!conn) return null;
 
