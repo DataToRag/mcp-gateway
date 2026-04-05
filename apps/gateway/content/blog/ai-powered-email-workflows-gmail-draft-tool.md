@@ -4,6 +4,7 @@ excerpt: "Most AI email tools generate and send in one shot. We built a draft wo
 date: "2026-04-04"
 author: "Manuel Yang"
 category: "Product"
+coverImage: "/blog/gmail-draft-workflow.png"
 ---
 
 Most AI email integrations work the same way. You describe what you want, the AI writes it, and the email goes out. For quick replies, that's fine. For a message to your biggest client about a contract change? You probably want to read it first.

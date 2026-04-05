@@ -15,6 +15,7 @@ export interface BlogPost {
   authorImage?: string;
   category?: string;
   ogImage?: string;
+  coverImage?: string;
   content: string;
   html: string;
 }
@@ -51,6 +52,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
     authorImage: data.authorImage,
     category: data.category,
     ogImage: data.ogImage,
+    coverImage: data.coverImage,
     content,
     html,
   };

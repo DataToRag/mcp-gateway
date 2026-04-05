@@ -102,7 +102,7 @@ export default async function BlogArticlePage({ params }: Props) {
     <>
       <Navbar />
       <main className="flex-1">
-        <article className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
+        <article className="mx-auto max-w-2xl px-6 pb-12 pt-28 sm:pb-16 sm:pt-32">
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -161,6 +161,19 @@ export default async function BlogArticlePage({ params }: Props) {
               </div>
             </div>
           </header>
+
+          {post.coverImage && (
+            <div className="mt-8 overflow-hidden rounded-2xl border border-border">
+              <Image
+                src={post.coverImage}
+                alt={post.title}
+                width={1200}
+                height={630}
+                className="w-full"
+                priority
+              />
+            </div>
+          )}
 
           <div
             className="prose mt-10"
