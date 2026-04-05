@@ -25,6 +25,7 @@ export async function GET() {
       createdAt: connectedAccounts.createdAt,
       scopes: serviceConnections.scopes,
       connectedAt: serviceConnections.connectedAt,
+      serviceConnectionId: connectedAccounts.serviceConnectionId,
     })
     .from(connectedAccounts)
     .innerJoin(
@@ -33,50 +34,34 @@ export async function GET() {
     )
     .where(eq(connectedAccounts.userId, userId));
 
-  // Legacy: service_connections without connected_accounts (un-migrated rows)
-  const migratedIds = accounts.map((a) => a.id); // connected_accounts ids, not useful here
-  const migratedServiceConnIds = await db
-    .select({ serviceConnectionId: connectedAccounts.serviceConnectionId })
-    .from(connectedAccounts)
-    .where(eq(connectedAccounts.userId, userId));
+  // Legacy: un-migrated service_connections (no connected_accounts row yet)
+  const migratedSet = accounts.map((a) => a.serviceConnectionId);
 
-  const migratedSet = migratedServiceConnIds.map(
-    (r) => r.serviceConnectionId
-  );
-
-  let legacyConnections: {
-    id: string;
-    service: string;
-    scopes: string | null;
-    connectedAt: Date;
-  }[] = [];
-
-  if (migratedSet.length > 0) {
-    legacyConnections = await db
-      .select({
-        id: serviceConnections.id,
-        service: serviceConnections.service,
-        scopes: serviceConnections.scopes,
-        connectedAt: serviceConnections.connectedAt,
-      })
-      .from(serviceConnections)
-      .where(
-        and(
-          eq(serviceConnections.userId, userId),
-          notInArray(serviceConnections.id, migratedSet)
-        )
-      );
-  } else {
-    legacyConnections = await db
-      .select({
-        id: serviceConnections.id,
-        service: serviceConnections.service,
-        scopes: serviceConnections.scopes,
-        connectedAt: serviceConnections.connectedAt,
-      })
-      .from(serviceConnections)
-      .where(eq(serviceConnections.userId, userId));
-  }
+  const legacyConnections =
+    migratedSet.length > 0
+      ? await db
+          .select({
+            id: serviceConnections.id,
+            service: serviceConnections.service,
+            scopes: serviceConnections.scopes,
+            connectedAt: serviceConnections.connectedAt,
+          })
+          .from(serviceConnections)
+          .where(
+            and(
+              eq(serviceConnections.userId, userId),
+              notInArray(serviceConnections.id, migratedSet)
+            )
+          )
+      : await db
+          .select({
+            id: serviceConnections.id,
+            service: serviceConnections.service,
+            scopes: serviceConnections.scopes,
+            connectedAt: serviceConnections.connectedAt,
+          })
+          .from(serviceConnections)
+          .where(eq(serviceConnections.userId, userId));
 
   return NextResponse.json({ accounts, connections: legacyConnections });
 }

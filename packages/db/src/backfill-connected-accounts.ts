@@ -10,7 +10,7 @@
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { serviceConnections } from "./schema/service-connections";
 import { connectedAccounts } from "./schema/connected-accounts";
 

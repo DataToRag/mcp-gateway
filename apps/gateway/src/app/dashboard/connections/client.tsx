@@ -3,24 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { SERVICES } from "./services";
-
-interface ConnectedAccount {
-  id: string;
-  connectorType: string;
-  label: string | null;
-  accountEmail: string;
-  isDefault: boolean;
-  createdAt: string;
-  scopes: string | null;
-  connectedAt: string;
-}
-
-interface LegacyConnection {
-  id: string;
-  service: string;
-  scopes: string | null;
-  connectedAt: string;
-}
+import type { ConnectedAccount, LegacyConnection } from "./types";
 
 export function ConnectionsClient() {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);

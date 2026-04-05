@@ -16,6 +16,12 @@ import type { ConnectionPool } from "./pool.js";
 import { NAMESPACE_SEPARATOR } from "./plugin-manager.js";
 import { PLUGIN_SERVICE_MAP, getServiceToken } from "./service-token.js";
 
+const ACCOUNT_PARAM_SCHEMA = {
+  type: "string",
+  description:
+    "Optional email address of the connected account to use (e.g. 'user@gmail.com'). If omitted, the default account is used.",
+} as const;
+
 /**
  * Creates a new MCP Server instance for a client session.
  * Dynamically serves tools from the registry and routes calls to backend
@@ -53,11 +59,7 @@ export function createMcpServer(
       if (PLUGIN_SERVICE_MAP[t.serverSlug]) {
         const properties = {
           ...(schema.properties as Record<string, unknown>),
-          account: {
-            type: "string",
-            description:
-              "Optional email address of the connected account to use (e.g. 'user@gmail.com'). If omitted, the default account is used.",
-          },
+          account: ACCOUNT_PARAM_SCHEMA,
         };
         return {
           name: t.namespacedName,
@@ -107,10 +109,7 @@ export function createMcpServer(
       };
     }
 
-    // Extract and strip the optional `account` param before forwarding to plugin
-    const args = { ...(rawArgs as Record<string, unknown>) };
-    const accountEmail = args.account as string | undefined;
-    delete args.account;
+    const args = rawArgs as Record<string, unknown>;
 
     const separatorIndex = name.indexOf(NAMESPACE_SEPARATOR);
     if (separatorIndex === -1) {
@@ -162,8 +161,13 @@ export function createMcpServer(
     // Look up per-user token: first check service connections, then legacy plugin connections
     let userToken: string | null = null;
 
+    // Extract account param only for service-connected tools
     const requiredService = PLUGIN_SERVICE_MAP[mcpServer.slug];
+    let accountEmail: string | undefined;
     if (requiredService) {
+      accountEmail = args.account as string | undefined;
+      delete args.account;
+
       userToken = await getServiceToken(
         db,
         userId,

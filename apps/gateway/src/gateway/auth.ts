@@ -2,12 +2,8 @@ import { randomBytes } from "node:crypto";
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
-import {
-  oauthAccessTokens,
-  serviceConnections,
-  connectedAccounts,
-  users,
-} from "@datatorag-mcp/db";
+import { oauthAccessTokens, users } from "@datatorag-mcp/db";
+import { upsertServiceAccount } from "./connected-accounts.js";
 
 const GWS_SCOPES = [
   "openid",
@@ -269,67 +265,15 @@ export function createAuthRouter(
       return;
     }
 
-    // Check if a connected_accounts row already exists for this email (re-auth)
-    const [existingAccount] = await db
-      .select({
-        id: connectedAccounts.id,
-        serviceConnectionId: connectedAccounts.serviceConnectionId,
-      })
-      .from(connectedAccounts)
-      .where(
-        and(
-          eq(connectedAccounts.userId, session.userId),
-          eq(connectedAccounts.connectorType, "google-workspace"),
-          eq(connectedAccounts.accountEmail, accountEmail)
-        )
-      )
-      .limit(1);
-
-    if (existingAccount) {
-      // Re-auth: update existing service_connections row
-      await db
-        .update(serviceConnections)
-        .set({
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token ?? null,
-          scopes: tokens.scope ?? GWS_SCOPES,
-          tokenExpiresAt: expiresAt,
-          updatedAt: new Date(),
-        })
-        .where(eq(serviceConnections.id, existingAccount.serviceConnectionId));
-    } else {
-      // New account: insert service_connections + connected_accounts
-      const [newConn] = await db
-        .insert(serviceConnections)
-        .values({
-          userId: session.userId,
-          service: "google-workspace",
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token ?? null,
-          scopes: tokens.scope ?? GWS_SCOPES,
-          tokenExpiresAt: expiresAt,
-        })
-        .returning({ id: serviceConnections.id });
-
-      // Check if this is the first account for this connector
-      const existingCount = await db
-        .select({ id: connectedAccounts.id })
-        .from(connectedAccounts)
-        .where(
-          and(
-            eq(connectedAccounts.userId, session.userId),
-            eq(connectedAccounts.connectorType, "google-workspace")
-          )
-        );
-
-      await db.insert(connectedAccounts).values({
-        userId: session.userId,
-        connectorType: "google-workspace",
-        accountEmail,
-        serviceConnectionId: newConn.id,
-        isDefault: existingCount.length === 0,
-      });
-    }
+    await upsertServiceAccount(
+      db,
+      session.userId,
+      "google-workspace",
+      accountEmail,
+      tokens,
+      GWS_SCOPES,
+      expiresAt
+    );
 
     res.redirect("/dashboard/connections?connected=google-workspace");
   });
@@ -450,66 +394,15 @@ export function createAuthRouter(
       return;
     }
 
-    // Check if a connected_accounts row already exists for this email (re-auth)
-    const [existingAccount] = await db
-      .select({
-        id: connectedAccounts.id,
-        serviceConnectionId: connectedAccounts.serviceConnectionId,
-      })
-      .from(connectedAccounts)
-      .where(
-        and(
-          eq(connectedAccounts.userId, session.userId),
-          eq(connectedAccounts.connectorType, "atlassian"),
-          eq(connectedAccounts.accountEmail, accountEmail)
-        )
-      )
-      .limit(1);
-
-    if (existingAccount) {
-      // Re-auth: update existing service_connections row
-      await db
-        .update(serviceConnections)
-        .set({
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token ?? null,
-          scopes: tokens.scope ?? ATLASSIAN_SCOPES,
-          tokenExpiresAt: expiresAt,
-          updatedAt: new Date(),
-        })
-        .where(eq(serviceConnections.id, existingAccount.serviceConnectionId));
-    } else {
-      // New account: insert service_connections + connected_accounts
-      const [newConn] = await db
-        .insert(serviceConnections)
-        .values({
-          userId: session.userId,
-          service: "atlassian",
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token ?? null,
-          scopes: tokens.scope ?? ATLASSIAN_SCOPES,
-          tokenExpiresAt: expiresAt,
-        })
-        .returning({ id: serviceConnections.id });
-
-      const existingCount = await db
-        .select({ id: connectedAccounts.id })
-        .from(connectedAccounts)
-        .where(
-          and(
-            eq(connectedAccounts.userId, session.userId),
-            eq(connectedAccounts.connectorType, "atlassian")
-          )
-        );
-
-      await db.insert(connectedAccounts).values({
-        userId: session.userId,
-        connectorType: "atlassian",
-        accountEmail,
-        serviceConnectionId: newConn.id,
-        isDefault: existingCount.length === 0,
-      });
-    }
+    await upsertServiceAccount(
+      db,
+      session.userId,
+      "atlassian",
+      accountEmail,
+      tokens,
+      ATLASSIAN_SCOPES,
+      expiresAt
+    );
 
     res.redirect("/dashboard/connections?connected=atlassian");
   });

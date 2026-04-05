@@ -3,6 +3,83 @@ import type { Database } from "@datatorag-mcp/db";
 import { connectedAccounts, serviceConnections } from "@datatorag-mcp/db";
 
 /**
+ * Upsert a service account after OAuth callback.
+ * Re-auth: updates existing tokens. New account: inserts both rows.
+ */
+export async function upsertServiceAccount(
+  db: Database,
+  userId: string,
+  connectorType: string,
+  accountEmail: string,
+  tokens: {
+    access_token: string;
+    refresh_token?: string;
+    scope?: string;
+  },
+  defaultScopes: string,
+  expiresAt: Date | null
+): Promise<void> {
+  const [existing] = await db
+    .select({
+      id: connectedAccounts.id,
+      serviceConnectionId: connectedAccounts.serviceConnectionId,
+    })
+    .from(connectedAccounts)
+    .where(
+      and(
+        eq(connectedAccounts.userId, userId),
+        eq(connectedAccounts.connectorType, connectorType),
+        eq(connectedAccounts.accountEmail, accountEmail)
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(serviceConnections)
+      .set({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token ?? null,
+        scopes: tokens.scope ?? defaultScopes,
+        tokenExpiresAt: expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(serviceConnections.id, existing.serviceConnectionId));
+  } else {
+    const [newConn] = await db
+      .insert(serviceConnections)
+      .values({
+        userId,
+        service: connectorType,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token ?? null,
+        scopes: tokens.scope ?? defaultScopes,
+        tokenExpiresAt: expiresAt,
+      })
+      .returning({ id: serviceConnections.id });
+
+    const [hasExisting] = await db
+      .select({ id: connectedAccounts.id })
+      .from(connectedAccounts)
+      .where(
+        and(
+          eq(connectedAccounts.userId, userId),
+          eq(connectedAccounts.connectorType, connectorType)
+        )
+      )
+      .limit(1);
+
+    await db.insert(connectedAccounts).values({
+      userId,
+      connectorType,
+      accountEmail,
+      serviceConnectionId: newConn.id,
+      isDefault: !hasExisting,
+    });
+  }
+}
+
+/**
  * When a default account is deleted, promote the next oldest account
  * for the same (user_id, connector_type) to default.
  */

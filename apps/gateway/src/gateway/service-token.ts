@@ -138,38 +138,44 @@ export async function getServiceToken(
   service: string,
   accountEmail?: string
 ): Promise<string | null> {
-  // Route through connected_accounts
-  const conditions = [
+  // Route through connected_accounts via single join
+  const accountConditions = [
     eq(connectedAccounts.userId, userId),
     eq(connectedAccounts.connectorType, service),
   ];
 
   if (accountEmail) {
-    conditions.push(eq(connectedAccounts.accountEmail, accountEmail));
+    accountConditions.push(eq(connectedAccounts.accountEmail, accountEmail));
   } else {
-    conditions.push(eq(connectedAccounts.isDefault, true));
+    accountConditions.push(eq(connectedAccounts.isDefault, true));
   }
 
-  const [account] = await db
+  let [conn] = await db
     .select({
-      serviceConnectionId: connectedAccounts.serviceConnectionId,
+      id: serviceConnections.id,
+      accessToken: serviceConnections.accessToken,
+      refreshToken: serviceConnections.refreshToken,
+      tokenExpiresAt: serviceConnections.tokenExpiresAt,
+      service: serviceConnections.service,
     })
     .from(connectedAccounts)
-    .where(and(...conditions))
+    .innerJoin(
+      serviceConnections,
+      eq(connectedAccounts.serviceConnectionId, serviceConnections.id)
+    )
+    .where(and(...accountConditions))
     .limit(1);
 
-  let conn;
-
-  if (account) {
+  // Fallback: direct lookup for un-migrated rows (no explicit account requested)
+  if (!conn && !accountEmail) {
     [conn] = await db
-      .select()
-      .from(serviceConnections)
-      .where(eq(serviceConnections.id, account.serviceConnectionId))
-      .limit(1);
-  } else if (!accountEmail) {
-    // Fallback: direct service_connections lookup (backward compat for un-migrated rows)
-    [conn] = await db
-      .select()
+      .select({
+        id: serviceConnections.id,
+        accessToken: serviceConnections.accessToken,
+        refreshToken: serviceConnections.refreshToken,
+        tokenExpiresAt: serviceConnections.tokenExpiresAt,
+        service: serviceConnections.service,
+      })
       .from(serviceConnections)
       .where(
         and(

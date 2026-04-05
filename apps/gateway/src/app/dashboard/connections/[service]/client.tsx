@@ -2,24 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-
-interface ConnectedAccount {
-  id: string;
-  connectorType: string;
-  label: string | null;
-  accountEmail: string;
-  isDefault: boolean;
-  createdAt: string;
-  scopes: string | null;
-  connectedAt: string;
-}
-
-interface LegacyConnection {
-  id: string;
-  service: string;
-  scopes: string | null;
-  connectedAt: string;
-}
+import type { ConnectedAccount, LegacyConnection } from "../types";
 
 interface Tool {
   name: string;
