@@ -39,6 +39,8 @@ We added lazy tool loading. Tools for services you haven't connected are hidden 
 
 When you connect a new service, its tools appear automatically. Disconnect it, they disappear. The LLM always sees exactly the tools it can actually use.
 
+![Tool Count: All vs Connected Only](/blog/lazy-loading-tool-count.png)
+
 ## What this looks like in practice
 
 A single conversation, two accounts:

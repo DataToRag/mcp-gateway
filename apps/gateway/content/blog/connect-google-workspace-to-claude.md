@@ -33,6 +33,8 @@ Here's what it looks like in practice, using the Domo report scenario.
 
 One prompt triggers the whole thing. No Apps Script. No cron job. No separate infrastructure.
 
+![Context Window Usage: Download vs Server-Side](/blog/attachment-token-comparison.png)
+
 ## Why not just download and re-upload?
 
 Before this tool existed, the workaround was: read the email, ask Claude to extract the attachment data, then create a new file in Drive. The problem is that attachment data is base64-encoded, and sending it through the conversation means it lands in your context window.

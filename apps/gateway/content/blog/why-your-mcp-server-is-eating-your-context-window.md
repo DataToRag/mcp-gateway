@@ -19,6 +19,8 @@ Slides are worse. A 10-slide presentation easily produces 100KB+ of JSON. Each s
 
 Sheets are the one exception where the raw API is reasonably sized, because `spreadsheets.values.get` returns just the cell values without formatting. But even there, if you accidentally hit the full `spreadsheets.get` endpoint, you're pulling sheet properties, conditional formatting rules, named ranges, and developer metadata.
 
+![API Response Size: Raw vs Optimized](/blog/context-window-bar-chart.png)
+
 ## What 50KB of context pollution actually costs
 
 Let's do rough math. Claude's context window is 200K tokens. 50KB of JSON is roughly 15,000-20,000 tokens. Two Google Doc reads and a slides read later, you've burned 50,000+ tokens on data the model will never meaningfully use. That's 25% of the context gone.
