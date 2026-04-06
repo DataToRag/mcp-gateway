@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { join } from "node:path";
+import { homedir } from "node:os";
+import { readFile } from "node:fs/promises";
+import { marked } from "marked";
 import { db } from "@/lib/db";
 import { mcpServers, tools } from "@datatorag-mcp/db";
 import { Navbar } from "@/components/navbar";
@@ -8,6 +12,42 @@ import Link from "next/link";
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+async function getReadmeHtml(
+  slug: string,
+  githubRepoOwner: string | null,
+  githubRepoName: string | null
+): Promise<string | null> {
+  // Try reading from local plugin directory first
+  try {
+    const pluginDir = join(homedir(), ".datatorag", "plugins", slug);
+    const content = await readFile(join(pluginDir, "README.md"), "utf-8");
+    return marked.parse(content) as string;
+  } catch {
+    // Not available locally
+  }
+
+  // Fall back to GitHub API
+  if (githubRepoOwner && githubRepoName) {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${githubRepoOwner}/${githubRepoName}/readme`,
+        {
+          headers: { Accept: "application/vnd.github.raw+json" },
+          next: { revalidate: 3600 },
+        }
+      );
+      if (res.ok) {
+        const content = await res.text();
+        return marked.parse(content) as string;
+      }
+    } catch {
+      // GitHub API unavailable
+    }
+  }
+
+  return null;
 }
 
 async function getServer(slug: string) {
@@ -19,12 +59,12 @@ async function getServer(slug: string) {
 
   if (!server || server.status !== "active") return null;
 
-  const serverTools = await db
-    .select()
-    .from(tools)
-    .where(eq(tools.mcpServerId, server.id));
+  const [serverTools, readmeHtml] = await Promise.all([
+    db.select().from(tools).where(eq(tools.mcpServerId, server.id)),
+    getReadmeHtml(slug, server.githubRepoOwner, server.githubRepoName),
+  ]);
 
-  return { server, tools: serverTools };
+  return { server, tools: serverTools, readmeHtml };
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -44,7 +84,7 @@ export default async function ToolDetailPage({ params }: Props) {
 
   if (!data) notFound();
 
-  const { server, tools: serverTools } = data;
+  const { server, tools: serverTools, readmeHtml } = data;
 
   return (
     <>
@@ -102,8 +142,17 @@ export default async function ToolDetailPage({ params }: Props) {
             </div>
           </div>
 
+          {/* README */}
+          {readmeHtml && (
+            <div
+              className="animate-fade-in-up mt-12 prose"
+              style={{ animationDelay: "0.1s" }}
+              dangerouslySetInnerHTML={{ __html: readmeHtml }}
+            />
+          )}
+
           {/* Capabilities */}
-          <div className="animate-fade-in-up mt-12" style={{ animationDelay: "0.1s" }}>
+          <div className="animate-fade-in-up mt-12" style={{ animationDelay: readmeHtml ? "0.2s" : "0.1s" }}>
             <h2 className="font-display text-lg font-bold text-foreground">
               Capabilities
             </h2>
@@ -164,7 +213,7 @@ export default async function ToolDetailPage({ params }: Props) {
           </div>
 
           {/* Connect */}
-          <div className="animate-fade-in-up mt-12" style={{ animationDelay: "0.2s" }}>
+          <div className="animate-fade-in-up mt-12" style={{ animationDelay: readmeHtml ? "0.3s" : "0.2s" }}>
             <h2 className="font-display text-lg font-bold text-foreground">
               Connect
             </h2>
