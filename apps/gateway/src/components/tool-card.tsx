@@ -6,8 +6,6 @@ interface ToolCardProps {
   name: string;
   description: string | null;
   toolCount: number;
-  creditsPerCall: number;
-  licenseSpdx: string | null;
 }
 
 export function ToolCard({

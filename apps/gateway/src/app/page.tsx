@@ -14,9 +14,7 @@ async function getServers() {
       slug: mcpServers.slug,
       name: mcpServers.name,
       description: mcpServers.description,
-      licenseSpdx: mcpServers.licenseSpdx,
       toolCount: sql<number>`count(${tools.id})::int`,
-      creditsPerCall: sql<number>`coalesce(min(${tools.creditsPerCall}), 1)`,
     })
     .from(mcpServers)
     .leftJoin(tools, eq(tools.mcpServerId, mcpServers.id))
@@ -289,8 +287,6 @@ export default async function HomePage() {
                       name={server.name}
                       description={server.description}
                       toolCount={server.toolCount}
-                      creditsPerCall={server.creditsPerCall}
-                      licenseSpdx={server.licenseSpdx}
                     />
                   </div>
                 ))}

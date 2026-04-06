@@ -20,18 +20,33 @@ export interface BlogPost {
   html: string;
 }
 
+// Cache parsed posts since blog content is static at deploy time
+let postsCache: BlogPost[] | null = null;
+const postsBySlug = new Map<string, BlogPost>();
+
 export function getAllPosts(): BlogPost[] {
+  if (postsCache) return postsCache;
+
   if (!fs.existsSync(BLOG_DIR)) return [];
 
-  return fs
+  postsCache = fs
     .readdirSync(BLOG_DIR)
     .filter((f) => f.endsWith(".md"))
-    .map((f) => getPostBySlug(f.replace(/\.md$/, "")))
+    .map((f) => parsePost(f.replace(/\.md$/, "")))
     .filter((p): p is BlogPost => p !== null)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  for (const post of postsCache) postsBySlug.set(post.slug, post);
+  return postsCache;
 }
 
 export function getPostBySlug(slug: string): BlogPost | null {
+  // Populate cache if needed
+  if (!postsCache) getAllPosts();
+  return postsBySlug.get(slug) ?? null;
+}
+
+function parsePost(slug: string): BlogPost | null {
   const filePath = path.join(BLOG_DIR, `${slug}.md`);
   if (!fs.existsSync(filePath)) return null;
 

@@ -41,13 +41,25 @@ export function createMcpServer(
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    // Determine which services the user has connected
-    const connectedServices = new Set<string>();
+    // Run user-specific and global queries in parallel
+    const [accountRows, registeredTools] = await Promise.all([
+      db
+        .selectDistinct({ connectorType: connectedAccounts.connectorType })
+        .from(connectedAccounts)
+        .where(eq(connectedAccounts.userId, userId)),
+      db
+        .select({
+          namespacedName: tools.namespacedName,
+          description: tools.description,
+          inputSchemaJson: tools.inputSchemaJson,
+          serverSlug: mcpServers.slug,
+        })
+        .from(tools)
+        .innerJoin(mcpServers, eq(tools.mcpServerId, mcpServers.id))
+        .where(and(eq(mcpServers.status, "active"), eq(tools.enabled, true))),
+    ]);
 
-    const accountRows = await db
-      .selectDistinct({ connectorType: connectedAccounts.connectorType })
-      .from(connectedAccounts)
-      .where(eq(connectedAccounts.userId, userId));
+    const connectedServices = new Set<string>();
     for (const row of accountRows) connectedServices.add(row.connectorType);
 
     // Fallback: check un-migrated service_connections
@@ -58,17 +70,6 @@ export function createMcpServer(
         .where(eq(serviceConnections.userId, userId));
       for (const row of legacyRows) connectedServices.add(row.service);
     }
-
-    const registeredTools = await db
-      .select({
-        namespacedName: tools.namespacedName,
-        description: tools.description,
-        inputSchemaJson: tools.inputSchemaJson,
-        serverSlug: mcpServers.slug,
-      })
-      .from(tools)
-      .innerJoin(mcpServers, eq(tools.mcpServerId, mcpServers.id))
-      .where(eq(mcpServers.status, "active"));
 
     const toolList: {
       name: string;

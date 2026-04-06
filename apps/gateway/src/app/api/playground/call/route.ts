@@ -9,8 +9,7 @@ import {
   PLUGIN_SERVICE_MAP,
   getServiceToken,
 } from "@/gateway/service-token";
-
-const NAMESPACE_SEPARATOR = "__";
+import { NAMESPACE_SEPARATOR } from "@/gateway/plugin-manager";
 
 // POST /api/playground/call
 export async function POST(request: NextRequest) {
@@ -100,14 +99,16 @@ export async function POST(request: NextRequest) {
       { capabilities: {} }
     );
 
-    await client.connect(transport);
-    const result = await client.callTool({
-      name: toolName,
-      arguments: args,
-    });
-    await client.close();
-
-    return NextResponse.json({ result });
+    try {
+      await client.connect(transport);
+      const result = await client.callTool({
+        name: toolName,
+        arguments: args,
+      });
+      return NextResponse.json({ result });
+    } finally {
+      await client.close();
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

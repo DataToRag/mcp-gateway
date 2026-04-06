@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { mcpServers, users } from "@datatorag-mcp/db";
+import { getSessionUserId } from "@/lib/session";
+import { mcpServers } from "@datatorag-mcp/db";
 import type { McpGatewayManifest } from "@datatorag-mcp/types";
 
 interface Props {
@@ -9,12 +10,11 @@ interface Props {
 }
 
 // GET /api/servers/:slug/connect — initiate OAuth for a plugin
-export async function GET(request: NextRequest, { params }: Props) {
+export async function GET(_request: NextRequest, { params }: Props) {
   const { slug } = await params;
 
-  // TODO: get userId from session
-  const [user] = await db.select().from(users).limit(1);
-  if (!user) {
+  const userId = await getSessionUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest, { params }: Props) {
 
   // Encode state with userId + slug for the callback
   const state = Buffer.from(
-    JSON.stringify({ userId: user.id, slug, serverId: server.id })
+    JSON.stringify({ userId, slug, serverId: server.id })
   ).toString("base64url");
 
   const authorizeUrl = new URL(oauth.authorizeUrl);
