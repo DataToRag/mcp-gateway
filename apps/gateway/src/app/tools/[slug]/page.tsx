@@ -50,7 +50,7 @@ export default async function ToolDetailPage({ params }: Props) {
       <Navbar />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
+        <div className="mx-auto max-w-4xl px-6 pb-12 pt-28 sm:pb-16 sm:pt-32">
           {/* Header */}
           <div className="animate-fade-in-up">
             <Link
