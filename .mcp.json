@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "datatorag": {
-      "type": "url",
+      "type": "http",
       "url": "https://datatorag.com/mcp"
     }
   }
