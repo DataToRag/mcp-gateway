@@ -1,0 +1,12 @@
+{
+  "name": "datatorag",
+  "description": "Connect Claude to Google Workspace, Atlassian, and more via MCP",
+  "version": "1.0.0",
+  "author": {
+    "name": "DataToRAG",
+    "email": "support@datatorag.com"
+  },
+  "homepage": "https://datatorag.com",
+  "repository": "https://github.com/DataToRag/mcp-gateway",
+  "license": "MIT"
+}
