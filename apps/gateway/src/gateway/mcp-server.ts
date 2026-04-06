@@ -9,6 +9,8 @@ import {
   tools,
   mcpServers,
   pluginConnections,
+  connectedAccounts,
+  serviceConnections,
 } from "@datatorag-mcp/db";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -75,21 +77,32 @@ export function createMcpServer(
       };
     });
 
-    toolList.push({
-      name: "echo",
-      description:
-        "Echo back the input message. A built-in test tool to verify the gateway is working.",
-      inputSchema: {
-        type: "object" as const,
-        properties: {
-          message: {
-            type: "string",
-            description: "The message to echo back",
-          },
+    toolList.push(
+      {
+        name: "list_connected_accounts",
+        description:
+          "List the user's connected accounts grouped by service. Use this to discover which accounts are available before passing the 'account' parameter to other tools.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {},
         },
-        required: ["message"],
       },
-    });
+      {
+        name: "echo",
+        description:
+          "Echo back the input message. A built-in test tool to verify the gateway is working.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            message: {
+              type: "string",
+              description: "The message to echo back",
+            },
+          },
+          required: ["message"],
+        },
+      }
+    );
 
     return { tools: toolList };
   });
@@ -104,6 +117,58 @@ export function createMcpServer(
           {
             type: "text" as const,
             text: `[datatorag-mcp echo] ${message ?? "(no message)"}`,
+          },
+        ],
+      };
+    }
+
+    if (name === "list_connected_accounts") {
+      const rows = await db
+        .select({
+          connectorType: connectedAccounts.connectorType,
+          accountEmail: connectedAccounts.accountEmail,
+          label: connectedAccounts.label,
+          isDefault: connectedAccounts.isDefault,
+          connectedAt: serviceConnections.connectedAt,
+        })
+        .from(connectedAccounts)
+        .innerJoin(
+          serviceConnections,
+          eq(connectedAccounts.serviceConnectionId, serviceConnections.id)
+        )
+        .where(eq(connectedAccounts.userId, userId));
+
+      const grouped: Record<
+        string,
+        { email: string; label: string | null; is_default: boolean; connected_at: string }[]
+      > = {};
+      for (const row of rows) {
+        const key = row.connectorType;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push({
+          email: row.accountEmail,
+          label: row.label,
+          is_default: row.isDefault,
+          connected_at: row.connectedAt.toISOString().split("T")[0],
+        });
+      }
+
+      if (Object.keys(grouped).length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "No connected accounts. The user can connect accounts at /dashboard/connections.",
+            },
+          ],
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(grouped, null, 2),
           },
         ],
       };
