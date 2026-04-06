@@ -5,6 +5,7 @@ date: "2026-04-02"
 author: "Manuel Yang"
 category: "Opinion"
 coverImage: "/blog/mcp-vs-cli.png"
+tags: ["mcp", "oauth", "architecture"]
 ---
 
 There's a take going around that MCP is dead. That CLIs and skills make it redundant. That the protocol overhead isn't worth it when you can just pipe shell commands into your AI assistant.

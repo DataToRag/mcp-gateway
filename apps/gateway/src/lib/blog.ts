@@ -16,6 +16,7 @@ export interface BlogPost {
   category?: string;
   ogImage?: string;
   coverImage?: string;
+  tags: string[];
   content: string;
   html: string;
 }
@@ -41,9 +42,26 @@ export function getAllPosts(): BlogPost[] {
 }
 
 export function getPostBySlug(slug: string): BlogPost | null {
-  // Populate cache if needed
   if (!postsCache) getAllPosts();
   return postsBySlug.get(slug) ?? null;
+}
+
+export function getRelatedPosts(slug: string, limit = 3): BlogPost[] {
+  const post = getPostBySlug(slug);
+  if (!post || post.tags.length === 0) return [];
+
+  const tagSet = new Set(post.tags);
+  const all = getAllPosts();
+
+  return all
+    .filter((p) => p.slug !== slug && p.tags.some((t) => tagSet.has(t)))
+    .sort((a, b) => {
+      const aOverlap = a.tags.filter((t) => tagSet.has(t)).length;
+      const bOverlap = b.tags.filter((t) => tagSet.has(t)).length;
+      if (bOverlap !== aOverlap) return bOverlap - aOverlap;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    })
+    .slice(0, limit);
 }
 
 function parsePost(slug: string): BlogPost | null {
@@ -68,6 +86,7 @@ function parsePost(slug: string): BlogPost | null {
     category: data.category,
     ogImage: data.ogImage,
     coverImage: data.coverImage,
+    tags: Array.isArray(data.tags) ? data.tags : [],
     content,
     html,
   };

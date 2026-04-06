@@ -5,6 +5,7 @@ date: "2026-03-28"
 author: "Manuel Yang"
 category: "Product"
 coverImage: "/blog/gmail-attachment-to-drive.png"
+tags: ["gmail", "google-drive", "google-workspace", "workflows", "context-window"]
 ---
 
 Someone on our early access list had a workflow that looked like this: a colleague scheduled 6 Domo reports to arrive by email at 4am every weekday. Each email had a CSV attachment. An Apps Script would save those attachments to a specific Google Drive folder. Then a Claude skill would pick up the 6 CSVs, aggregate them into one Google Sheet, and write a summary. Another sheet pulled the summary via `IMPORTRANGE`.

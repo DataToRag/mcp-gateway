@@ -5,6 +5,7 @@ date: "2026-04-05"
 author: "Manuel Yang"
 category: "Product"
 coverImage: "/blog/multi-account-mcp.png"
+tags: ["multi-account", "google-workspace", "mcp", "context-window"]
 ---
 
 Here's a scenario that kept coming up. You're in Claude, drafting a reply to a work email, and you need to find a receipt from your personal Gmail. You open a new browser tab, log into a different Google account, search for the receipt, copy the details, and paste them back into your conversation.

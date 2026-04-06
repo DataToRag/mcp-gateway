@@ -5,6 +5,7 @@ date: "2026-04-03"
 author: "Manuel Yang"
 category: "Engineering"
 coverImage: "/blog/context-window-optimization.png"
+tags: ["mcp", "context-window", "google-workspace", "performance"]
 ---
 
 Every tool call in an MCP conversation consumes tokens. The response goes into the context window, sits there for the rest of the conversation, and counts against the limit on every subsequent turn. This is obvious if you think about it. Most MCP server authors don't think about it.

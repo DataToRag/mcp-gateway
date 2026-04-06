@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getAllPosts, getPostBySlug } from "@/lib/blog";
+import { getAllPosts, getPostBySlug, getRelatedPosts } from "@/lib/blog";
 import { Navbar } from "@/components/navbar";
 import { ZoomableImage } from "@/components/zoomable-image";
 
@@ -180,6 +180,47 @@ export default async function BlogArticlePage({ params }: Props) {
             className="prose mt-10"
             dangerouslySetInnerHTML={{ __html: post.html }}
           />
+
+          {post.tags.length > 0 && (
+            <div className="mt-10 flex flex-wrap gap-2">
+              {post.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {(() => {
+            const related = getRelatedPosts(slug);
+            if (related.length === 0) return null;
+            return (
+              <div className="mt-12 border-t border-border pt-10">
+                <h2 className="font-display text-lg font-bold text-foreground">
+                  Related articles
+                </h2>
+                <div className="mt-5 space-y-4">
+                  {related.map((r) => (
+                    <Link
+                      key={r.slug}
+                      href={`/blog/${r.slug}`}
+                      className="block rounded-xl border border-border p-4 transition-colors hover:border-primary/30 hover:bg-secondary/50"
+                    >
+                      <span className="text-sm font-medium text-foreground">
+                        {r.title}
+                      </span>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                        {r.excerpt}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </article>
       </main>
     </>

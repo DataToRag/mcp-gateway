@@ -5,6 +5,7 @@ date: "2026-04-05"
 author: "Manuel Yang"
 category: "Engineering"
 coverImage: "/blog/multi-account-architecture.png"
+tags: ["multi-account", "mcp", "oauth", "architecture", "google-workspace"]
 ---
 
 People kept asking for it. "I have a work Google account and a personal one. Can I search both?" The answer was no, because our entire auth model assumed one account per service per user. Fixing that touched every layer of the stack: database schema, token resolution, tool schemas, and the OAuth callback flow. Here's how we did it.
