@@ -17,6 +17,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import type { ConnectionPool } from "./pool.js";
 import { NAMESPACE_SEPARATOR } from "./plugin-manager.js";
 import { PLUGIN_SERVICE_MAP, getServiceToken } from "./service-token.js";
+import { listConnectedAccounts } from "./connected-accounts.js";
 
 const ACCOUNT_PARAM_SCHEMA = {
   type: "string",
@@ -40,6 +41,24 @@ export function createMcpServer(
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    // Determine which services the user has connected
+    const connectedServices = new Set<string>();
+
+    const accountRows = await db
+      .selectDistinct({ connectorType: connectedAccounts.connectorType })
+      .from(connectedAccounts)
+      .where(eq(connectedAccounts.userId, userId));
+    for (const row of accountRows) connectedServices.add(row.connectorType);
+
+    // Fallback: check un-migrated service_connections
+    if (connectedServices.size === 0) {
+      const legacyRows = await db
+        .selectDistinct({ service: serviceConnections.service })
+        .from(serviceConnections)
+        .where(eq(serviceConnections.userId, userId));
+      for (const row of legacyRows) connectedServices.add(row.service);
+    }
+
     const registeredTools = await db
       .select({
         namespacedName: tools.namespacedName,
@@ -51,31 +70,41 @@ export function createMcpServer(
       .innerJoin(mcpServers, eq(tools.mcpServerId, mcpServers.id))
       .where(eq(mcpServers.status, "active"));
 
-    const toolList = registeredTools.map((t) => {
+    const toolList: {
+      name: string;
+      description: string;
+      inputSchema: Record<string, unknown>;
+    }[] = [];
+
+    for (const t of registeredTools) {
+      const requiredService = PLUGIN_SERVICE_MAP[t.serverSlug];
+
+      // Skip tools for services the user hasn't connected
+      if (requiredService && !connectedServices.has(requiredService)) continue;
+
       const schema = (t.inputSchemaJson as Record<string, unknown>) ?? {
         type: "object" as const,
         properties: {},
       };
 
-      // Inject optional `account` param for tools that use service connections
-      if (PLUGIN_SERVICE_MAP[t.serverSlug]) {
+      if (requiredService) {
         const properties = {
           ...(schema.properties as Record<string, unknown>),
           account: ACCOUNT_PARAM_SCHEMA,
         };
-        return {
+        toolList.push({
           name: t.namespacedName,
           description: t.description ?? "",
           inputSchema: { ...schema, properties },
-        };
+        });
+      } else {
+        toolList.push({
+          name: t.namespacedName,
+          description: t.description ?? "",
+          inputSchema: schema,
+        });
       }
-
-      return {
-        name: t.namespacedName,
-        description: t.description ?? "",
-        inputSchema: schema,
-      };
-    });
+    }
 
     toolList.push(
       {
@@ -123,20 +152,18 @@ export function createMcpServer(
     }
 
     if (name === "list_connected_accounts") {
-      const rows = await db
-        .select({
-          connectorType: connectedAccounts.connectorType,
-          accountEmail: connectedAccounts.accountEmail,
-          label: connectedAccounts.label,
-          isDefault: connectedAccounts.isDefault,
-          connectedAt: serviceConnections.connectedAt,
-        })
-        .from(connectedAccounts)
-        .innerJoin(
-          serviceConnections,
-          eq(connectedAccounts.serviceConnectionId, serviceConnections.id)
-        )
-        .where(eq(connectedAccounts.userId, userId));
+      const rows = await listConnectedAccounts(db, userId);
+
+      if (rows.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "No connected accounts. The user can connect accounts at /dashboard/connections.",
+            },
+          ],
+        };
+      }
 
       const grouped: Record<
         string,
@@ -153,23 +180,9 @@ export function createMcpServer(
         });
       }
 
-      if (Object.keys(grouped).length === 0) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: "No connected accounts. The user can connect accounts at /dashboard/connections.",
-            },
-          ],
-        };
-      }
-
       return {
         content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(grouped, null, 2),
-          },
+          { type: "text" as const, text: JSON.stringify(grouped) },
         ],
       };
     }
@@ -226,7 +239,6 @@ export function createMcpServer(
     // Look up per-user token: first check service connections, then legacy plugin connections
     let userToken: string | null = null;
 
-    // Extract account param only for service-connected tools
     const requiredService = PLUGIN_SERVICE_MAP[mcpServer.slug];
     let accountEmail: string | undefined;
     if (requiredService) {

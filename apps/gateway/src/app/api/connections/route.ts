@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSessionUserId } from "@/lib/session";
 import { serviceConnections, connectedAccounts } from "@datatorag-mcp/db";
 import {
+  listConnectedAccounts,
   disconnectAccount,
   setDefaultAccount,
 } from "@/gateway/connected-accounts";
@@ -15,24 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const accounts = await db
-    .select({
-      id: connectedAccounts.id,
-      connectorType: connectedAccounts.connectorType,
-      label: connectedAccounts.label,
-      accountEmail: connectedAccounts.accountEmail,
-      isDefault: connectedAccounts.isDefault,
-      createdAt: connectedAccounts.createdAt,
-      scopes: serviceConnections.scopes,
-      connectedAt: serviceConnections.connectedAt,
-      serviceConnectionId: connectedAccounts.serviceConnectionId,
-    })
-    .from(connectedAccounts)
-    .innerJoin(
-      serviceConnections,
-      eq(connectedAccounts.serviceConnectionId, serviceConnections.id)
-    )
-    .where(eq(connectedAccounts.userId, userId));
+  const accounts = await listConnectedAccounts(db, userId);
 
   // Legacy: un-migrated service_connections (no connected_accounts row yet)
   const migratedSet = accounts.map((a) => a.serviceConnectionId);

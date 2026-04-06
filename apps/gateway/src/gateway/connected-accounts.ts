@@ -3,6 +3,30 @@ import type { Database } from "@datatorag-mcp/db";
 import { connectedAccounts, serviceConnections } from "@datatorag-mcp/db";
 
 /**
+ * List all connected accounts for a user, joined with service connection metadata.
+ */
+export async function listConnectedAccounts(db: Database, userId: string) {
+  return db
+    .select({
+      id: connectedAccounts.id,
+      connectorType: connectedAccounts.connectorType,
+      accountEmail: connectedAccounts.accountEmail,
+      label: connectedAccounts.label,
+      isDefault: connectedAccounts.isDefault,
+      createdAt: connectedAccounts.createdAt,
+      scopes: serviceConnections.scopes,
+      connectedAt: serviceConnections.connectedAt,
+      serviceConnectionId: connectedAccounts.serviceConnectionId,
+    })
+    .from(connectedAccounts)
+    .innerJoin(
+      serviceConnections,
+      eq(connectedAccounts.serviceConnectionId, serviceConnections.id)
+    )
+    .where(eq(connectedAccounts.userId, userId));
+}
+
+/**
  * Upsert a service account after OAuth callback.
  * Re-auth: updates existing tokens. New account: inserts both rows.
  */
