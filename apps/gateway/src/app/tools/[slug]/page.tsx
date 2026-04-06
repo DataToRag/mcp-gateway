@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { mcpServers, tools } from "@datatorag-mcp/db";
 import { Navbar } from "@/components/navbar";
+import { SERVER_LOGOS } from "@/components/server-logos";
 import Link from "next/link";
 
 interface Props {
@@ -64,8 +65,8 @@ export default async function ToolDetailPage({ params }: Props) {
             </Link>
 
             <div className="mt-6 flex items-start gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent font-display text-2xl font-bold text-accent-foreground">
-                {server.name.charAt(0).toUpperCase()}
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent p-2.5 font-display text-2xl font-bold text-accent-foreground">
+                {SERVER_LOGOS[slug] ?? server.name.charAt(0).toUpperCase()}
               </div>
               <div>
                 <h1 className="font-display text-2xl font-bold text-foreground">
