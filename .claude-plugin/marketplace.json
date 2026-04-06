@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "datatorag",
-      "source": ".",
+      "source": "./",
       "description": "Connect Claude to Google Workspace, Atlassian, and more via MCP"
     }
   ]
