@@ -18,6 +18,7 @@ import type { ConnectionPool } from "./pool.js";
 import { NAMESPACE_SEPARATOR } from "./plugin-manager.js";
 import { PLUGIN_SERVICE_MAP, getServiceToken } from "./service-token.js";
 import { listConnectedAccounts } from "./connected-accounts.js";
+import { trackToolCall } from "./track.js";
 
 const ACCOUNT_PARAM_SCHEMA = {
   type: "string",
@@ -282,10 +283,11 @@ export function createMcpServer(
       `[route] ${name} → ${serverUrl} (tool: ${toolName}, token: ${userToken ? "yes" : "no"})`
     );
 
+    const startTime = Date.now();
+
     try {
       let result;
       if (userToken) {
-        // One-shot client with user token header
         const transport = new StreamableHTTPClientTransport(
           new URL(serverUrl),
           { requestInit: { headers: { "X-User-Token": userToken } } }
@@ -304,7 +306,6 @@ export function createMcpServer(
           await oneShotClient.close();
         }
       } else {
-        // No user token — use the shared connection pool
         const pooledClient = await pool.acquire(mcpServer.id, serverUrl);
         try {
           result = await pooledClient.callTool({
@@ -315,6 +316,26 @@ export function createMcpServer(
           pool.release(mcpServer.id, pooledClient);
         }
       }
+
+      const responseText = JSON.stringify(result);
+      const isError = !!(result as { isError?: boolean }).isError;
+      const content = (result as { content?: Array<{ type: string; text?: string }> }).content;
+      trackToolCall({
+        userId,
+        toolName: name,
+        connectorType: requiredService ?? null,
+        accountEmail,
+        status: isError ? "error" : "success",
+        latencyMs: Date.now() - startTime,
+        responseSizeBytes: responseText.length,
+        errorMessage: isError
+          ? content
+              ?.filter((c) => c.type === "text")
+              .map((c) => c.text)
+              .join(" ") ?? null
+          : null,
+      });
+
       return result;
     } catch (error) {
       const message =
@@ -323,6 +344,18 @@ export function createMcpServer(
         `[route-error] ${serverSlug}/${toolName} @ ${serverUrl}:`,
         message
       );
+
+      trackToolCall({
+        userId,
+        toolName: name,
+        connectorType: requiredService ?? null,
+        accountEmail,
+        status: "error",
+        latencyMs: Date.now() - startTime,
+        responseSizeBytes: null,
+        errorMessage: message,
+      });
+
       return {
         content: [
           {
