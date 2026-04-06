@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "datatorag": {
-      "command": "https://datatorag.com/mcp",
-      "transport": "http"
+      "type": "url",
+      "url": "https://datatorag.com/mcp"
     }
   }
 }
