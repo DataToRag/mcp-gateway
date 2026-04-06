@@ -1,0 +1,14 @@
+{
+  "name": "datatorag",
+  "owner": {
+    "name": "DataToRAG",
+    "email": "support@datatorag.com"
+  },
+  "plugins": [
+    {
+      "name": "datatorag",
+      "source": ".",
+      "description": "Connect Claude to Google Workspace, Atlassian, and more via MCP"
+    }
+  ]
+}
