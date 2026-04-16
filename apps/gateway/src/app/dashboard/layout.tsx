@@ -6,6 +6,7 @@ import Image from "next/image";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/docs", label: "Docs" },
 ];
 
 interface User {
@@ -101,7 +102,7 @@ export default function DashboardLayout({
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Mobile header */}
       <div className="flex h-14 items-center justify-between border-b border-border px-4 md:hidden">
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <Image
             src="/datatorag-logo-256.png"
             alt="DataToRAG"
@@ -111,7 +112,7 @@ export default function DashboardLayout({
           <span className="font-display text-sm font-bold text-foreground">
             DataToRAG
           </span>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           {user && <UserMenu user={user} />}
           <button
@@ -172,7 +173,10 @@ export default function DashboardLayout({
 
       {/* Desktop sidebar */}
       <aside className="hidden w-56 shrink-0 flex-col border-r border-border md:flex">
-        <div className="flex h-16 items-center gap-3 border-b border-border px-5">
+        <Link
+          href="/"
+          className="flex h-16 items-center gap-3 border-b border-border px-5"
+        >
           <Image
             src="/datatorag-logo-256.png"
             alt="DataToRAG"
@@ -182,7 +186,7 @@ export default function DashboardLayout({
           <span className="font-display text-sm font-bold text-foreground">
             DataToRAG
           </span>
-        </div>
+        </Link>
 
         <nav className="mt-4 space-y-1 px-3">
           {navItems.map((item) => (
