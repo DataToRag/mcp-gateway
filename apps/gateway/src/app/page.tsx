@@ -20,7 +20,10 @@ async function getServers() {
     .leftJoin(tools, eq(tools.mcpServerId, mcpServers.id))
     .where(eq(mcpServers.status, "active"))
     .groupBy(mcpServers.id)
-    .orderBy(mcpServers.name);
+    .orderBy(
+      sql`CASE WHEN ${mcpServers.slug} = 'gws-mcp' THEN 0 ELSE 1 END`,
+      mcpServers.name
+    );
 
   return servers;
 }
@@ -35,68 +38,65 @@ export default async function HomePage() {
       <main className="flex-1 overflow-x-hidden">
         {/* Hero */}
         <ShaderBackground>
-          <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center px-6 py-20">
-            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-              {/* Left: copy */}
-              <div className="text-center lg:text-left">
-                <div
-                  className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 backdrop-blur-sm"
-                >
-                  <span className="text-xs font-medium text-white/90">
-                    MCP Gateway + Integration Services
-                  </span>
-                </div>
-                <h1
-                  className="animate-fade-in-up mt-6 font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
-                  style={{ animationDelay: "0.06s" }}
-                >
-                  Get your data
-                  <br />
-                  <span className="text-blue-200">AI-ready.</span>
-                </h1>
-                <p
-                  className="animate-fade-in-up mx-auto mt-6 max-w-lg text-base leading-relaxed text-white/60 sm:text-lg lg:mx-0"
-                  style={{ animationDelay: "0.12s" }}
-                >
-                  DataToRAG connects your internal data to AI assistants like Claude
-                  through the Model Context Protocol. Self-serve platform or
-                  white-glove integration. We bridge the gap.
-                </p>
-                <div
-                  className="animate-fade-in-up mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start"
-                  style={{ animationDelay: "0.18s" }}
-                >
-                  <Link
-                    href="/auth/login"
-                    className="rounded-full bg-white px-7 py-3 text-sm font-medium text-[#1a3a8f] transition-all hover:bg-white/90"
-                  >
-                    Get Started
-                  </Link>
-                  <a
-                    href="#services"
-                    className="rounded-full border border-white/30 px-7 py-3 text-sm font-medium text-white transition-all hover:border-white/50 hover:bg-white/10"
-                  >
-                    Talk to Us
-                  </a>
-                </div>
+          <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl flex-col items-center justify-center px-6 py-20">
+            {/* Copy */}
+            <div className="text-center">
+              <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 backdrop-blur-sm">
+                <span className="text-xs font-medium text-white/90">
+                  MCP Gateway · Flagship: Google Workspace
+                </span>
               </div>
-
-              {/* Right: demo video */}
-              <div
-                className="animate-fade-in-up"
-                style={{ animationDelay: "0.24s" }}
+              <h1
+                className="animate-fade-in-up mt-6 font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
+                style={{ animationDelay: "0.06s" }}
               >
-                <div
-                  id="demo-video"
-                  className="aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm"
+                Get your data
+                <br />
+                <span className="text-blue-200">AI-ready.</span>
+              </h1>
+              <p
+                className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-white/60 sm:text-lg"
+                style={{ animationDelay: "0.12s" }}
+              >
+                DataToRAG connects your data to AI assistants through the Model
+                Context Protocol. Our flagship Google Workspace integration brings
+                Gmail, Drive, Calendar, Docs, Sheets, and Slides into Claude —
+                with multi-account support and token-efficient tools.
+              </p>
+              <div
+                className="animate-fade-in-up mt-8 flex flex-wrap items-center justify-center gap-3"
+                style={{ animationDelay: "0.18s" }}
+              >
+                <Link
+                  href="/auth/login"
+                  className="rounded-full bg-white px-7 py-3 text-sm font-medium text-[#1a3a8f] transition-all hover:bg-white/90"
                 >
-                  <iframe
-                    src="https://www.youtube.com/embed/2UQvZJcuRy0"
-                    className="h-full w-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
+                  Get Started
+                </Link>
+                <a
+                  href="#services"
+                  className="rounded-full border border-white/30 px-7 py-3 text-sm font-medium text-white transition-all hover:border-white/50 hover:bg-white/10"
+                >
+                  Talk to Us
+                </a>
+              </div>
+            </div>
+
+            {/* Demo video — full width below */}
+            <div
+              className="animate-fade-in-up mt-12 w-full"
+              style={{ animationDelay: "0.24s" }}
+            >
+              <div
+                id="demo-video"
+                className="aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm"
+              >
+                <iframe
+                  src="https://www.youtube.com/embed/2UQvZJcuRy0"
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
               </div>
             </div>
           </div>
@@ -164,6 +164,179 @@ export default async function HomePage() {
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     {item.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Google Workspace flagship */}
+        <section id="workspace" className="mx-auto max-w-6xl px-6 py-20">
+          <div className="animate-fade-in-up">
+            <p className="text-sm font-semibold uppercase tracking-widest text-primary">
+              Flagship integration
+            </p>
+            <h2 className="mt-3 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              Google Workspace,
+              <br />
+              native in Claude.
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              48 tools across 8 Google services. Connect once, use everywhere —
+              inbox triage, calendar coordination, doc drafting, sheet analysis —
+              from any MCP-compatible client.
+            </p>
+          </div>
+
+          {/* 8 services grid */}
+          <div
+            className="animate-fade-in-up mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4"
+            style={{ animationDelay: "0.1s" }}
+          >
+            {[
+              "Gmail",
+              "Calendar",
+              "Drive",
+              "Docs",
+              "Sheets",
+              "Slides",
+              "Contacts",
+              "Tasks",
+            ].map((name) => (
+              <Link
+                key={name}
+                href={`/docs/${name.toLowerCase()}`}
+                className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-secondary/50"
+              >
+                {name}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  className="text-muted-foreground/50"
+                >
+                  <path d="M6 4l4 4-4 4" />
+                </svg>
+              </Link>
+            ))}
+          </div>
+
+          {/* Differentiators */}
+          <div
+            className="animate-fade-in-up mt-10 grid gap-5 sm:grid-cols-2"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <div className="rounded-2xl border border-border bg-background p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="9" cy="8" r="3" />
+                  <circle cx="17" cy="10" r="2.5" />
+                  <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                  <path d="M14.5 20c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5" />
+                </svg>
+              </div>
+              <h3 className="mt-4 font-display text-base font-semibold text-foreground">
+                Multi-account support
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Connect personal, shared, and team Google accounts under one MCP
+                endpoint. Claude can search across all of them in a single
+                prompt — or target a specific account when you need to.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
+                </svg>
+              </div>
+              <h3 className="mt-4 font-display text-base font-semibold text-foreground">
+                Optimized tools
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Naive API wrappers dump everything into your context. DataToRAG
+                tools are tuned for token efficiency — the same Gmail thread
+                read costs a fraction of the tokens, which means longer
+                conversations and smarter agents.
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="animate-fade-in-up mt-10"
+            style={{ animationDelay: "0.3s" }}
+          >
+            <Link
+              href="/docs/getting-started"
+              className="inline-block rounded-[var(--radius)] bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90"
+            >
+              Browse the docs
+            </Link>
+          </div>
+        </section>
+
+        {/* Built for — personas */}
+        <section id="personas" className="border-y border-border bg-secondary/50">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <div className="animate-fade-in-up text-center">
+              <p className="text-sm font-semibold uppercase tracking-widest text-primary">
+                Who it&apos;s for
+              </p>
+              <h2 className="mt-3 font-display text-2xl font-bold text-foreground sm:text-3xl">
+                Built for the way you work
+              </h2>
+            </div>
+
+            <div
+              className="animate-fade-in-up mt-12 grid gap-6 sm:grid-cols-3"
+              style={{ animationDelay: "0.1s" }}
+            >
+              {[
+                {
+                  title: "Executives & managers",
+                  desc: "Unified inbox triage across multiple Gmail accounts, calendar coordination, and drafting docs or slides via AI. Cross-account search finds the thread you need without context-switching.",
+                },
+                {
+                  title: "Customer-facing teams",
+                  desc: "Sales, CS, and support pull email and call context straight into AI prompts. Connect personal, shared, and team inboxes under one endpoint — triage threads fast without leaving the assistant.",
+                },
+                {
+                  title: "Developers & AI builders",
+                  desc: "One HTTP endpoint for Claude, custom agents, or internal tooling. OAuth per user, optimized tool responses, no infrastructure to run. Ship AI features without building an MCP server from scratch.",
+                },
+              ].map((persona) => (
+                <div
+                  key={persona.title}
+                  className="rounded-2xl border border-border bg-background p-6"
+                >
+                  <h3 className="font-display text-base font-semibold text-foreground">
+                    {persona.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    {persona.desc}
                   </p>
                 </div>
               ))}
