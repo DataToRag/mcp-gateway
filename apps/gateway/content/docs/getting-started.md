@@ -1,11 +1,11 @@
 ---
 title: "Getting Started"
-description: "Connect your Google Workspace to AI assistants through a single MCP endpoint."
+description: "Connect your tools to AI assistants through a single MCP endpoint."
 order: 0
 section: "general"
 ---
 
-DataToRAG gives your AI assistant access to Google Workspace — Gmail, Drive, Calendar, Docs, Sheets, Slides, Contacts, and Tasks — through a single MCP server.
+DataToRAG gives your AI assistant access to Google Workspace (Gmail, Drive, Calendar, Docs, Sheets, Slides, Contacts, Tasks) and Atlassian (Jira, Confluence) through a single MCP server.
 
 ## Quick setup
 
@@ -33,7 +33,9 @@ Each user connects their own Google account through OAuth. DataToRAG requests on
 
 ## Available connectors
 
-DataToRAG currently supports these Google Workspace services:
+DataToRAG currently supports these services:
+
+**Google Workspace**
 
 - **Gmail** — Search, read, send, reply, forward, draft, and save attachments
 - **Calendar** — List, create, update, delete events, and check availability
@@ -43,5 +45,10 @@ DataToRAG currently supports these Google Workspace services:
 - **Slides** — Read, create, batch update, and delete presentations
 - **Contacts** — Search, list, create, update, delete contacts, and search company directory
 - **Tasks** — List task lists, list tasks, create, update, complete, and delete tasks
+
+**Atlassian**
+
+- **Jira** — Search issues with JQL, create, update, transition, comment, and manage attachments
+- **Confluence** — Search with CQL, read and edit pages, manage comments and attachments
 
 Each connector is documented on its own page with available operations, required scopes, and example prompts.
