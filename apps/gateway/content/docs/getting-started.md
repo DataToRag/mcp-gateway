@@ -35,7 +35,7 @@ Each user connects their own Google account through OAuth. DataToRAG requests on
 
 DataToRAG currently supports these Google Workspace services:
 
-- **Gmail** — Search, read, send, reply, forward, draft, triage, and save attachments
+- **Gmail** — Search, read, send, reply, forward, draft, and save attachments
 - **Calendar** — List, create, update, delete events, and check availability
 - **Drive** — Search files, read content, and create folders
 - **Docs** — Read, create, write, and batch update documents
