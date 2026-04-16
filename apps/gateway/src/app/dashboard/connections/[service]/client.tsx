@@ -88,14 +88,14 @@ export function ConnectionDetailClient({
     setAccounts((prev) => prev.filter((a) => a.id !== accountId));
     setDisconnecting(null);
     if (accounts.length <= 1) {
-      router.push("/dashboard/connections");
+      router.push("/dashboard");
     }
   }
 
   async function disconnectLegacy() {
     setDisconnecting("legacy");
     await fetch(`/api/connections?service=${service}`, { method: "DELETE" });
-    router.push("/dashboard/connections");
+    router.push("/dashboard");
   }
 
   async function setDefault(accountId: string) {

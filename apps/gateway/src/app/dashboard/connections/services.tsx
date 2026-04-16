@@ -2,6 +2,7 @@ export interface ServiceConfig {
   id: string;
   name: string;
   description: string;
+  capabilities: string[];
   connectUrl: string;
   icon: React.ReactNode;
 }
@@ -12,6 +13,11 @@ export const SERVICES: ServiceConfig[] = [
     name: "Google Workspace",
     description:
       "Gmail, Drive, Calendar, Docs, Sheets, Slides, Contacts, and Tasks",
+    capabilities: [
+      "Search emails, send replies, create and update drafts",
+      "Read and create Docs, Sheets, and Slides",
+      "Search Drive, manage files and folders",
+    ],
     connectUrl: "/auth/google/connect",
     icon: (
       <svg viewBox="0 0 24 24" className="h-8 w-8">
@@ -38,6 +44,11 @@ export const SERVICES: ServiceConfig[] = [
     id: "atlassian",
     name: "Atlassian",
     description: "Jira and Confluence — issues, pages, comments, and search",
+    capabilities: [
+      "Search, create, and update Jira issues",
+      "Read and edit Confluence pages",
+      "Manage comments, transitions, and attachments",
+    ],
     connectUrl: "/auth/atlassian/connect",
     icon: (
       <svg viewBox="0 0 24 24" className="h-8 w-8">

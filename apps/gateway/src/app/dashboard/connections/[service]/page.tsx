@@ -15,10 +15,10 @@ export default async function ConnectionDetailPage({ params }: Props) {
   return (
     <div>
       <Link
-        href="/dashboard/connections"
+        href="/dashboard"
         className="text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        &larr; Connections
+        &larr; Dashboard
       </Link>
 
       <div className="mt-4 flex items-center gap-4">

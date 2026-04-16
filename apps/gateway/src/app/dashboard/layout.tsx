@@ -5,8 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 const navItems = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/connections", label: "Connections" },
+  { href: "/dashboard", label: "Dashboard" },
 ];
 
 interface User {
@@ -204,7 +203,7 @@ export default function DashboardLayout({
 
       {/* Main content */}
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-4xl px-4 py-6 sm:px-8 sm:py-10">
+        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-10">
           {children}
         </div>
       </main>
