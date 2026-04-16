@@ -187,3 +187,29 @@ body {
   border-radius: 0;
   font-size: inherit;
 }
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.prose th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--foreground);
+  border-bottom: 2px solid var(--border);
+  padding: 0.5rem 0.75rem;
+}
+
+.prose td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.prose tr:last-child td {
+  border-bottom: none;
+}
