@@ -21,6 +21,8 @@
     "gray-matter": "^4.0.3",
     "marked": "^17.0.5",
     "next": "16.2.0",
+    "posthog-js": "^1.369.1",
+    "posthog-node": "^5.29.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^3.24.0"

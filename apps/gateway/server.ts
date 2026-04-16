@@ -14,6 +14,7 @@ import { createAuthorizeRouter } from "./src/gateway/oauth/authorize.js";
 import { createTokenRouter } from "./src/gateway/oauth/token.js";
 import { createAuthRouter } from "./src/gateway/auth.js";
 import { getPluginManager } from "./src/lib/plugin-manager.js";
+import { shutdownPosthog } from "./src/gateway/track.js";
 
 const dev = process.env.NODE_ENV !== "production";
 
@@ -35,6 +36,7 @@ async function main() {
     console.log("Shutting down...");
     await pluginManager.stopAll();
     await pool.drain();
+    await shutdownPosthog();
     process.exit(0);
   };
   process.on("SIGTERM", shutdown);

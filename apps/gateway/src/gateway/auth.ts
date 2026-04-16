@@ -4,6 +4,11 @@ import { eq, and } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
 import { oauthAccessTokens, users } from "@datatorag-mcp/db";
 import { upsertServiceAccount } from "./connected-accounts.js";
+import {
+  trackLogin,
+  trackOAuthCompleted,
+  trackSignup,
+} from "./track.js";
 
 const GWS_SCOPES = [
   "openid",
@@ -112,6 +117,7 @@ export function createAuthRouter(
       .where(eq(users.email, googleUser.email))
       .limit(1);
 
+    let isNewUser = false;
     if (!user) {
       [user] = await db
         .insert(users)
@@ -122,6 +128,13 @@ export function createAuthRouter(
           avatarUrl: googleUser.picture ?? null,
         })
         .returning();
+      isNewUser = true;
+    }
+
+    if (isNewUser) {
+      trackSignup(user.id, user.email, user.name);
+    } else {
+      trackLogin(user.id);
     }
 
     const token = randomBytes(32).toString("base64url");
@@ -275,6 +288,8 @@ export function createAuthRouter(
       expiresAt
     );
 
+    trackOAuthCompleted(session.userId, "google-workspace", accountEmail);
+
     res.redirect("/dashboard/connections?connected=google-workspace");
   });
 
@@ -403,6 +418,8 @@ export function createAuthRouter(
       ATLASSIAN_SCOPES,
       expiresAt
     );
+
+    trackOAuthCompleted(session.userId, "atlassian", accountEmail);
 
     res.redirect("/dashboard/connections?connected=atlassian");
   });

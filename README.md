@@ -63,9 +63,9 @@ That's it. The db-init container automatically pushes the schema and seeds a tes
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **Gateway** | http://localhost:4100 | MCP proxy + dashboard |
-| **Gateway health** | http://localhost:4100/health | Health check |
-| **OAuth metadata** | http://localhost:4100/.well-known/oauth-authorization-server | OAuth2 discovery |
+| **Gateway** | http://localhost:8285 | MCP proxy + dashboard |
+| **Gateway health** | http://localhost:8285/health | Health check |
+| **OAuth metadata** | http://localhost:8285/.well-known/oauth-authorization-server | OAuth2 discovery |
 
 ### Connect an MCP Client
 
@@ -75,7 +75,7 @@ Add this to your MCP client config (Claude Desktop, Cursor, etc.):
 {
   "mcpServers": {
     "datatorag": {
-      "url": "http://localhost:4100/mcp"
+      "url": "http://localhost:8285/mcp"
     }
   }
 }
@@ -88,10 +88,12 @@ Your browser will open automatically for sign-in via OAuth.
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
 | `DATABASE_URL` | — | Yes | PostgreSQL connection string |
-| `GATEWAY_PORT` | `4100` | No | Gateway server port |
-| `GATEWAY_BASE_URL` | `http://localhost:4100` | No | Public URL for OAuth redirects |
+| `GATEWAY_PORT` | `8285` | No | Gateway server port |
+| `GATEWAY_BASE_URL` | `http://localhost:8285` | No | Public URL for OAuth redirects |
 | `GOOGLE_CLIENT_ID` | — | For OAuth | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | — | For OAuth | Google OAuth client secret |
+| `POSTHOG_API_KEY` | — | No | PostHog project key for server-side analytics (tool calls, signups, OAuth) |
+| `NEXT_PUBLIC_POSTHOG_KEY` | — | No | Same value as `POSTHOG_API_KEY`, exposed to the browser for pageviews, autocapture, and identify. Inlined at build time — must be set when running `next build` or `docker build`. PostHog project keys are safe to expose publicly. |
 
 ### Development Without Docker
 

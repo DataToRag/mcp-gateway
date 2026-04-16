@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import posthog from "posthog-js";
 import { SERVICES } from "./connections/services";
 import type { ConnectedAccount, LegacyConnection } from "./connections/types";
 
@@ -37,7 +38,11 @@ export function DashboardClient() {
     fetchConnections();
   }, [fetchConnections]);
 
-  async function disconnectAccount(e: React.MouseEvent, accountId: string) {
+  async function disconnectAccount(
+    e: React.MouseEvent,
+    accountId: string,
+    connector: string
+  ) {
     e.preventDefault();
     e.stopPropagation();
     setDisconnecting(accountId);
@@ -46,6 +51,7 @@ export function DashboardClient() {
     });
     setAccounts((prev) => prev.filter((a) => a.id !== accountId));
     setDisconnecting(null);
+    posthog.capture("connector_removed", { connector });
   }
 
   async function disconnectLegacy(e: React.MouseEvent, service: string) {
@@ -55,6 +61,7 @@ export function DashboardClient() {
     await fetch(`/api/connections?service=${service}`, { method: "DELETE" });
     setLegacyConnections((prev) => prev.filter((c) => c.service !== service));
     setDisconnecting(null);
+    posthog.capture("connector_removed", { connector: service });
   }
 
   function copyPrompt(index: number, text: string) {
@@ -176,7 +183,9 @@ export function DashboardClient() {
                           )}
                         </div>
                         <button
-                          onClick={(e) => disconnectAccount(e, account.id)}
+                          onClick={(e) =>
+                            disconnectAccount(e, account.id, service.id)
+                          }
                           disabled={disconnecting === account.id}
                           className="shrink-0 text-[11px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                         >
@@ -221,6 +230,12 @@ export function DashboardClient() {
                       </Link>
                       <a
                         href={service.connectUrl}
+                        onClick={() =>
+                          posthog.capture("connector_added", {
+                            connector: service.id,
+                            mode: "add_account",
+                          })
+                        }
                         className="rounded-[var(--radius)] border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >
                         Add account
@@ -229,6 +244,12 @@ export function DashboardClient() {
                   ) : (
                     <a
                       href={service.connectUrl}
+                      onClick={() =>
+                        posthog.capture("connector_added", {
+                          connector: service.id,
+                          mode: "first_connect",
+                        })
+                      }
                       className="block rounded-[var(--radius)] bg-primary py-1.5 text-center text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                       Connect
@@ -301,7 +322,12 @@ export function DashboardClient() {
         <p className="mt-0.5 text-xs text-muted-foreground">
           Add this to your MCP client config to connect.
         </p>
-        <pre className="mt-3 overflow-x-auto rounded-xl border border-border bg-[#1C1917] p-4 font-mono text-xs leading-relaxed text-[#E7E5E4]">
+        <pre
+          onCopy={() =>
+            posthog.capture("copy_mcp_config", { source: "dashboard" })
+          }
+          className="mt-3 overflow-x-auto rounded-xl border border-border bg-[#1C1917] p-4 font-mono text-xs leading-relaxed text-[#E7E5E4]"
+        >
           {`{
   "mcpServers": {
     "datatorag": {

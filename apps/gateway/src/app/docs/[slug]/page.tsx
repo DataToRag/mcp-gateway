@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAllDocs, getDocBySlug } from "@/lib/docs";
+import { DocViewTracker } from "./view-tracker";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -35,6 +36,7 @@ export default async function DocPage({ params }: Props) {
 
   return (
     <div>
+      <DocViewTracker slug={doc.slug} section={doc.section} />
       <h1 className="font-display text-2xl font-bold text-foreground">
         {doc.title}
       </h1>

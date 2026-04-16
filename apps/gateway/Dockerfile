@@ -26,6 +26,12 @@ COPY apps/gateway/ apps/gateway/
 
 # Build workspace packages, then Next.js + custom server
 ENV DATABASE_URL=postgresql://placeholder:placeholder@placeholder:5432/placeholder
+
+# Build-time: Next.js inlines NEXT_PUBLIC_* into the client bundle during `next build`.
+# Pass the value via `docker build --build-arg NEXT_PUBLIC_POSTHOG_KEY=...` or docker-compose build.args.
+ARG NEXT_PUBLIC_POSTHOG_KEY=""
+ENV NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY
+
 RUN pnpm run build --filter=@datatorag-mcp/gateway
 
 WORKDIR /app/apps/gateway

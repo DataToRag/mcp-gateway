@@ -33,6 +33,8 @@ services:
     build:
       context: ..
       dockerfile: apps/gateway/Dockerfile
+      args:
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
     ports:
       - "80:80"
     environment:
@@ -45,6 +47,8 @@ services:
       GOOGLE_GWS_CLIENT_SECRET: ${GOOGLE_GWS_CLIENT_SECRET:-}
       ATLASSIAN_CLIENT_ID: ${ATLASSIAN_CLIENT_ID:-}
       ATLASSIAN_CLIENT_SECRET: ${ATLASSIAN_CLIENT_SECRET:-}
+      POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
+      NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
       NODE_ENV: production
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost/health').then(r=>{if(!r.ok)throw r.status;process.exit(0)}).catch(()=>process.exit(1))"]
