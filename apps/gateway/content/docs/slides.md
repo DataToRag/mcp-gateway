@@ -3,6 +3,7 @@ title: "Slides"
 description: "Read, create, and update Google Slides presentations."
 order: 6
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Slides connector lets your AI assistant read presentation content, create new decks, and apply batch updates to slides.

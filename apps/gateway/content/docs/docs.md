@@ -3,6 +3,7 @@ title: "Docs"
 description: "Read, create, write, and batch update Google Docs."
 order: 4
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Docs connector gives your AI assistant the ability to read and write Google Docs — creating documents, inserting content, and applying batch formatting updates.

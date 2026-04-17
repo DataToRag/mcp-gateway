@@ -3,6 +3,7 @@ title: "Gmail"
 description: "Search, read, send, reply, forward, and draft emails."
 order: 1
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Gmail connector gives your AI assistant full access to your inbox — searching, reading, composing, and organizing messages.

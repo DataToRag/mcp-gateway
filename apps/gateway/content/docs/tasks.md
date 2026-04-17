@@ -3,6 +3,7 @@ title: "Tasks"
 description: "List, create, update, complete, and delete Google Tasks."
 order: 8
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Tasks connector lets your AI assistant manage your Google Tasks — listing task lists, creating items, marking them complete, and organizing your to-dos.

@@ -3,6 +3,7 @@ title: "Calendar"
 description: "List, create, update, and delete events. Check free/busy availability."
 order: 2
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Calendar connector lets your AI assistant manage your Google Calendar — viewing your schedule, creating events, and checking availability.

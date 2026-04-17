@@ -3,6 +3,7 @@ title: "Contacts"
 description: "Search, list, create, update, and delete Google Contacts. Search company directory."
 order: 7
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Contacts connector gives your AI assistant access to your Google Contacts and your organization's directory.

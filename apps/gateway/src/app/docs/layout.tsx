@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getAllDocs } from "@/lib/docs";
+import { getConnectorGroups, getTopLevelDocs } from "@/lib/docs";
+import { DocsSidebar } from "./sidebar";
 import { DocsNavClient } from "./nav-client";
 
 export default function DocsLayout({
@@ -8,9 +9,17 @@ export default function DocsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const docs = getAllDocs();
-  const general = docs.filter((d) => d.section === "general");
-  const connectors = docs.filter((d) => d.section === "connectors");
+  const topLevel = getTopLevelDocs().map((d) => ({
+    slug: d.slug,
+    title: d.title,
+  }));
+  const groups = getConnectorGroups().map((g) => ({
+    connector: g.connector,
+    overview: g.overview
+      ? { slug: g.overview.slug, title: g.overview.title }
+      : null,
+    pages: g.pages.map((p) => ({ slug: p.slug, title: p.title })),
+  }));
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -27,11 +36,11 @@ export default function DocsLayout({
             Docs
           </span>
         </Link>
-        <DocsNavClient general={general} connectors={connectors} />
+        <DocsNavClient topLevel={topLevel} groups={groups} />
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-border md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border md:flex">
         <div className="flex h-16 items-center gap-3 border-b border-border px-5">
           <Image
             src="/datatorag-logo-256.png"
@@ -47,29 +56,8 @@ export default function DocsLayout({
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {general.map((doc) => (
-            <Link
-              key={doc.slug}
-              href={`/docs/${doc.slug}`}
-              className="block rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              {doc.title}
-            </Link>
-          ))}
-
-          <div className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-            Connectors
-          </div>
-          {connectors.map((doc) => (
-            <Link
-              key={doc.slug}
-              href={`/docs/${doc.slug}`}
-              className="block rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              {doc.title}
-            </Link>
-          ))}
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+          <DocsSidebar topLevel={topLevel} groups={groups} />
         </nav>
 
         <div className="border-t border-border px-3 py-3">

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { marked } from "marked";
+import { CONNECTORS, type Connector } from "./docs-connectors";
 
 const DOCS_DIR = path.join(process.cwd(), "content", "docs");
 
@@ -11,8 +12,15 @@ export interface DocPage {
   description: string;
   order: number;
   section: string;
+  connector: string | null;
   content: string;
   html: string;
+}
+
+export interface ConnectorGroup {
+  connector: Connector;
+  overview: DocPage | null;
+  pages: DocPage[];
 }
 
 let pagesCache: DocPage[] | null = null;
@@ -39,8 +47,22 @@ export function getDocBySlug(slug: string): DocPage | null {
   return pagesBySlug.get(slug) ?? null;
 }
 
-export function getDocsBySection(section: string): DocPage[] {
-  return getAllDocs().filter((p) => p.section === section);
+export function getTopLevelDocs(): DocPage[] {
+  const connectorSlugs = new Set(CONNECTORS.map((c) => c.slug));
+  return getAllDocs().filter(
+    (d) => d.connector === null && !connectorSlugs.has(d.slug)
+  );
+}
+
+export function getConnectorGroups(): ConnectorGroup[] {
+  const all = getAllDocs();
+  return CONNECTORS.map((connector) => {
+    const overview = all.find((d) => d.slug === connector.slug) ?? null;
+    const pages = all
+      .filter((d) => d.connector === connector.id)
+      .sort((a, b) => a.order - b.order);
+    return { connector, overview, pages };
+  });
 }
 
 function parsePage(slug: string): DocPage | null {
@@ -57,6 +79,7 @@ function parsePage(slug: string): DocPage | null {
     description: data.description ?? "",
     order: data.order ?? 99,
     section: data.section ?? "general",
+    connector: data.connector ?? null,
     content,
     html,
   };

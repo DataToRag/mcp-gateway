@@ -3,6 +3,7 @@ title: "Sheets"
 description: "Read, create, update, append, and delete Google Sheets."
 order: 5
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Sheets connector lets your AI assistant read data from spreadsheets, write to cells, append rows, and create new sheets.

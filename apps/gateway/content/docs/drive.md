@@ -3,6 +3,7 @@ title: "Drive"
 description: "Search files, read content, and create folders in Google Drive."
 order: 3
 section: "connectors"
+connector: "google-workspace"
 ---
 
 The Drive connector lets your AI assistant search across your Google Drive, read file contents, and organize files into folders.
