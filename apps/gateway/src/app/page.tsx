@@ -562,6 +562,15 @@ export default async function HomePage() {
           <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>
           {" "}&middot;{" "}
           <a href="/terms" className="underline hover:text-foreground">Terms of Service</a>
+          {" "}&middot;{" "}
+          <a
+            href="https://github.com/datatorag/mcp-gateway"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground"
+          >
+            GitHub
+          </a>
         </p>
       </footer>
     </>
