@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import type { Database } from "@datatorag-mcp/db";
 import { oauthAccessTokens, users } from "@datatorag-mcp/db";
 import { upsertServiceAccount } from "./connected-accounts.js";
+import { PROVIDERS } from "../lib/analytics.js";
 import {
   trackLogin,
   trackOAuthCompleted,
@@ -281,16 +282,16 @@ export function createAuthRouter(
     await upsertServiceAccount(
       db,
       session.userId,
-      "google-workspace",
+      PROVIDERS.GOOGLE_WORKSPACE,
       accountEmail,
       tokens,
       GWS_SCOPES,
       expiresAt
     );
 
-    trackOAuthCompleted(session.userId, "google-workspace", accountEmail);
+    trackOAuthCompleted(session.userId, PROVIDERS.GOOGLE_WORKSPACE, accountEmail);
 
-    res.redirect("/dashboard/connections?connected=google-workspace");
+    res.redirect(`/dashboard/connections?connected=${PROVIDERS.GOOGLE_WORKSPACE}`);
   });
 
   // --- Atlassian connection (Jira + Confluence) ---
@@ -412,16 +413,16 @@ export function createAuthRouter(
     await upsertServiceAccount(
       db,
       session.userId,
-      "atlassian",
+      PROVIDERS.ATLASSIAN,
       accountEmail,
       tokens,
       ATLASSIAN_SCOPES,
       expiresAt
     );
 
-    trackOAuthCompleted(session.userId, "atlassian", accountEmail);
+    trackOAuthCompleted(session.userId, PROVIDERS.ATLASSIAN, accountEmail);
 
-    res.redirect("/dashboard/connections?connected=atlassian");
+    res.redirect(`/dashboard/connections?connected=${PROVIDERS.ATLASSIAN}`);
   });
 
   return router;

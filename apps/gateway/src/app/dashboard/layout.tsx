@@ -3,19 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useCurrentUser, type CurrentUser } from "@/lib/use-current-user";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/docs", label: "Docs" },
 ];
 
-interface User {
-  name: string | null;
-  email: string;
-  avatarUrl: string | null;
-}
-
-function UserMenu({ user }: { user: User }) {
+function UserMenu({ user }: { user: CurrentUser }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -88,15 +83,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    fetch("/api/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.user) setUser(data.user);
-      });
-  }, []);
+  const user = useCurrentUser();
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">

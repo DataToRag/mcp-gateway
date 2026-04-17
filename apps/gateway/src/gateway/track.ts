@@ -1,14 +1,16 @@
 import { PostHog } from "posthog-node";
+import { getEnv } from "@datatorag-mcp/config";
+import { EVENTS, type ProviderId } from "../lib/analytics.js";
 
-const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
 const POSTHOG_HOST = "https://us.i.posthog.com";
 
 let client: PostHog | null = null;
 
 function getClient(): PostHog | null {
-  if (!POSTHOG_API_KEY) return null;
+  const apiKey = getEnv().POSTHOG_API_KEY;
+  if (!apiKey) return null;
   if (!client) {
-    client = new PostHog(POSTHOG_API_KEY, {
+    client = new PostHog(apiKey, {
       host: POSTHOG_HOST,
       flushAt: 20,
       flushInterval: 10_000,
@@ -17,7 +19,6 @@ function getClient(): PostHog | null {
   return client;
 }
 
-/** Flush pending events. Call on graceful shutdown. */
 export async function shutdownPosthog(): Promise<void> {
   if (client) {
     await client.shutdown();
@@ -39,7 +40,7 @@ export function trackToolCall(props: {
   if (!c) return;
   c.capture({
     distinctId: props.userId,
-    event: "tool_call",
+    event: EVENTS.TOOL_CALL,
     properties: {
       tool_name: props.toolName,
       connector_type: props.connectorType,
@@ -52,7 +53,11 @@ export function trackToolCall(props: {
   });
 }
 
-export function trackSignup(userId: string, email: string, name: string | null): void {
+export function trackSignup(
+  userId: string,
+  email: string,
+  name: string | null
+): void {
   const c = getClient();
   if (!c) return;
   c.identify({
@@ -61,7 +66,7 @@ export function trackSignup(userId: string, email: string, name: string | null):
   });
   c.capture({
     distinctId: userId,
-    event: "user_signed_up",
+    event: EVENTS.USER_SIGNED_UP,
     properties: { email },
   });
 }
@@ -71,30 +76,20 @@ export function trackLogin(userId: string): void {
   if (!c) return;
   c.capture({
     distinctId: userId,
-    event: "user_logged_in",
-  });
-}
-
-export function trackConnectorAdded(userId: string, connector: string): void {
-  const c = getClient();
-  if (!c) return;
-  c.capture({
-    distinctId: userId,
-    event: "connector_added",
-    properties: { connector },
+    event: EVENTS.USER_LOGGED_IN,
   });
 }
 
 export function trackOAuthCompleted(
   userId: string,
-  provider: string,
+  provider: ProviderId,
   accountEmail: string
 ): void {
   const c = getClient();
   if (!c) return;
   c.capture({
     distinctId: userId,
-    event: "account_connected",
+    event: EVENTS.ACCOUNT_CONNECTED,
     properties: { provider, account_email: accountEmail },
   });
 }

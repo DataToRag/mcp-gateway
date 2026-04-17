@@ -16,6 +16,8 @@ const envSchema = z.object({
   // Atlassian OAuth — Jira + Confluence
   ATLASSIAN_CLIENT_ID: z.string().default(""),
   ATLASSIAN_CLIENT_SECRET: z.string().default(""),
+  // PostHog
+  POSTHOG_API_KEY: z.string().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;

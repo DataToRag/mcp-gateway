@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import posthog from "posthog-js";
+import { EVENTS } from "@/lib/analytics";
 import { SERVICES } from "./connections/services";
 import type { ConnectedAccount, LegacyConnection } from "./connections/types";
 
@@ -38,20 +39,18 @@ export function DashboardClient() {
     fetchConnections();
   }, [fetchConnections]);
 
-  async function disconnectAccount(
-    e: React.MouseEvent,
-    accountId: string,
-    connector: string
-  ) {
+  async function disconnectAccount(e: React.MouseEvent, account: ConnectedAccount) {
     e.preventDefault();
     e.stopPropagation();
-    setDisconnecting(accountId);
-    await fetch(`/api/connections?accountId=${accountId}`, {
+    setDisconnecting(account.id);
+    await fetch(`/api/connections?accountId=${account.id}`, {
       method: "DELETE",
     });
-    setAccounts((prev) => prev.filter((a) => a.id !== accountId));
+    setAccounts((prev) => prev.filter((a) => a.id !== account.id));
     setDisconnecting(null);
-    posthog.capture("connector_removed", { connector });
+    posthog.capture(EVENTS.CONNECTOR_REMOVED, {
+      connector: account.connectorType,
+    });
   }
 
   async function disconnectLegacy(e: React.MouseEvent, service: string) {
@@ -61,7 +60,7 @@ export function DashboardClient() {
     await fetch(`/api/connections?service=${service}`, { method: "DELETE" });
     setLegacyConnections((prev) => prev.filter((c) => c.service !== service));
     setDisconnecting(null);
-    posthog.capture("connector_removed", { connector: service });
+    posthog.capture(EVENTS.CONNECTOR_REMOVED, { connector: service });
   }
 
   function copyPrompt(index: number, text: string) {
@@ -183,9 +182,7 @@ export function DashboardClient() {
                           )}
                         </div>
                         <button
-                          onClick={(e) =>
-                            disconnectAccount(e, account.id, service.id)
-                          }
+                          onClick={(e) => disconnectAccount(e, account)}
                           disabled={disconnecting === account.id}
                           className="shrink-0 text-[11px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                         >
@@ -231,7 +228,7 @@ export function DashboardClient() {
                       <a
                         href={service.connectUrl}
                         onClick={() =>
-                          posthog.capture("connector_added", {
+                          posthog.capture(EVENTS.CONNECTOR_ADDED, {
                             connector: service.id,
                             mode: "add_account",
                           })
@@ -245,7 +242,7 @@ export function DashboardClient() {
                     <a
                       href={service.connectUrl}
                       onClick={() =>
-                        posthog.capture("connector_added", {
+                        posthog.capture(EVENTS.CONNECTOR_ADDED, {
                           connector: service.id,
                           mode: "first_connect",
                         })
@@ -324,7 +321,7 @@ export function DashboardClient() {
         </p>
         <pre
           onCopy={() =>
-            posthog.capture("copy_mcp_config", { source: "dashboard" })
+            posthog.capture(EVENTS.COPY_MCP_CONFIG, { source: "dashboard" })
           }
           className="mt-3 overflow-x-auto rounded-xl border border-border bg-[#1C1917] p-4 font-mono text-xs leading-relaxed text-[#E7E5E4]"
         >
